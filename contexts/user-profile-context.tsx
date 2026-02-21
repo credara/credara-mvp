@@ -12,6 +12,7 @@ import type { AnyUser } from "@/lib/types/users";
 import { mapProfileToUser } from "@/lib/types/profile-mapper";
 import type { Profile } from "@/lib/db/schema";
 import { createClient } from "@/lib/supabase/client";
+import { getUserProfile } from "@/app/actions/user";
 
 type UserProfileContextType = {
   profile: AnyUser | null;
@@ -22,18 +23,6 @@ type UserProfileContextType = {
 const UserProfileContext = createContext<UserProfileContextType | undefined>(
   undefined
 );
-
-async function fetchProfile(userId: string): Promise<AnyUser | null> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", userId)
-    .single();
-
-  if (error || !data) return null;
-  return mapProfileToUser(data as unknown as Profile);
-}
 
 export function UserProfileProvider({
   children,
@@ -51,8 +40,8 @@ export function UserProfileProvider({
       return;
     }
     setLoading(true);
-    const p = await fetchProfile(user.id);
-    setProfile(p);
+    const p = await getUserProfile(user.id);
+    setProfile(mapProfileToUser(p as Profile));
     setLoading(false);
   }, [user?.id]);
 

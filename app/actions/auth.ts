@@ -6,7 +6,9 @@ import {
   loginSchema,
   signUpSchema,
   forgotPasswordSchema,
+  onboardingSchema,
 } from "@/app/(auth)/schema";
+import { db, profiles } from "@/lib/db";
 
 export type LoginFormState = {
   error?: string;
@@ -17,6 +19,10 @@ export type SignUpFormState = {
   errors?: Record<string, string>;
 };
 export type ForgotPasswordFormState = {
+  error?: string;
+  errors?: Record<string, string>;
+};
+export type OnboardingFormState = {
   error?: string;
   errors?: Record<string, string>;
 };
@@ -82,12 +88,11 @@ export async function signUp(
     options: {
       data: {
         full_name: parsed.data.fullName,
-        user_type: parsed.data.userType,
       },
     },
   });
   if (error) return { error: error.message };
-  redirect("/auth/confirm-email");
+  redirect("/confirm-email");
 }
 
 export async function signInWithGoogle() {
@@ -111,7 +116,7 @@ export async function signInWithGoogleForm(_formData: FormData) {
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/auth/login");
+  redirect("/login");
 }
 
 export async function resetPassword(
@@ -142,6 +147,68 @@ export async function resetPassword(
   return { message: "Check your email for the reset link" };
 }
 
+const USER_TYPE_TO_ROLE = {
+  individual: "INDIVIDUAL",
+  landlord: "LANDLORD",
+  fintech: "FINTECH",
+} as const;
+
+export async function completeOnboarding(
+  prev: OnboardingFormState | FormData,
+  formData?: FormData | null
+): Promise<OnboardingFormState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/login");
+  }
+  try {
+    const data = getFormData(prev, formData ?? null);
+    const raw = {
+      userType: data.get("userType") as string,
+      phone: data.get("phone") as string,
+      businessName: (data.get("businessName") as string | null) || undefined,
+    };
+    const parsed = onboardingSchema.safeParse(raw);
+    if (!parsed.success) {
+      const errors: Record<string, string> = {};
+      parsed.error.flatten().fieldErrors &&
+        Object.entries(parsed.error.flatten().fieldErrors).forEach(([k, v]) => {
+          if (v?.[0]) errors[k] = v[0];
+        });
+      return { errors };
+    }
+
+    const role = USER_TYPE_TO_ROLE[parsed.data.userType];
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (existing) {
+      redirect("/home");
+    }
+
+    await db.insert(profiles).values({
+      id: user.id,
+      phone: parsed.data.phone,
+      email: user.email ?? undefined,
+      fullName: user.user_metadata?.full_name ?? undefined,
+      role,
+      institutionType:
+        role === "LANDLORD" || role === "FINTECH" ? role : undefined,
+      businessName: parsed.data.businessName || undefined,
+    });
+  } catch (error) {
+    console.log(error);
+    return { error: "Failed to complete onboarding" };
+  }
+  redirect("/home");
+}
+
 export async function updatePassword(formData: FormData) {
   const supabase = await createClient();
 
@@ -153,5 +220,5 @@ export async function updatePassword(formData: FormData) {
     return { error: error.message };
   }
 
-  redirect("/auth/login?updated=password");
+  redirect("/login?updated=password");
 }

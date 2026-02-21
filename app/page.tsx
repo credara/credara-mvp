@@ -7,6 +7,7 @@ import CTASection from "@/components/hero/cta-section";
 import FooterSection from "@/components/hero/footer-section";
 import FAQSection from "@/components/hero/faq-section";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function LandingPage() {
   return (
@@ -33,14 +34,17 @@ export default function LandingPage() {
                     </div>
                   </div>
                 </div>
-                <div className="h-6 sm:h-7 md:h-8 flex justify-start items-center gap-2 sm:gap-3">
+                <Link
+                  href="/login"
+                  className="h-6 sm:h-7 cursor-pointer md:h-8 flex justify-start items-center gap-2 sm:gap-3"
+                >
                   <Button
                     variant="outline"
                     className="text-[#37322F] bg-white shadow-[0px_1px_2px_rgba(55,50,47,0.12)] rounded-full text-xs md:text-[13px] font-medium leading-5 font-sans"
                   >
                     Log in
                   </Button>
-                </div>
+                </Link>
               </div>
             </div>
 

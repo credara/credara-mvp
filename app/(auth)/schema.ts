@@ -1,4 +1,14 @@
 import { z } from "zod";
+import { parsePhoneNumber } from "libphonenumber-js";
+
+function isValidPhone(value: string, country: "NG" = "NG"): boolean {
+  try {
+    const phone = parsePhoneNumber(value, country);
+    return phone?.isValid() ?? false;
+  } catch {
+    return false;
+  }
+}
 
 export const loginSchema = z.object({
   email: z.string().min(1, "Email is required").email("Invalid email address"),
@@ -40,4 +50,14 @@ export const signUpSchema = z
 
 export const forgotPasswordSchema = z.object({
   email: z.string().min(1, "Email is required").email("Invalid email address"),
+});
+
+export const onboardingSchema = z.object({
+  userType: z.enum(userTypeValues),
+  phone: z
+    .string()
+    .min(1, "Phone number is required")
+    .max(32, "Phone number too long")
+    .refine((val) => isValidPhone(val, "NG"), "Invalid phone number"),
+  businessName: z.string().max(255).optional(),
 });

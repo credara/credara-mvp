@@ -23,7 +23,16 @@ import {
   userTypeLabels,
   type UserType,
 } from "@/app/(auth)/schema";
-import { ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon, EyeIcon, EyeOffIcon } from "lucide-react";
+
+const initialFormValues = {
+  fullName: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  agreed: false,
+  userType: "individual" as UserType,
+};
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -39,12 +48,20 @@ function SubmitButton() {
 }
 
 export default function SignupPage() {
-  const [agreed, setAgreed] = useState(false);
-  const [userType, setUserType] = useState<UserType>("individual");
+  const [formValues, setFormValues] = useState(initialFormValues);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [state, formAction] = useFormState<SignUpFormState, FormData>(
     signUp,
     {}
   );
+
+  const updateField = <K extends keyof typeof initialFormValues>(
+    field: K,
+    value: (typeof initialFormValues)[K]
+  ) => {
+    setFormValues((prev) => ({ ...prev, [field]: value }));
+  };
 
   return (
     <div className="min-h-screen flex">
@@ -81,6 +98,8 @@ export default function SignupPage() {
                 type="text"
                 placeholder="John Doe"
                 name="fullName"
+                value={formValues.fullName}
+                onChange={(e) => updateField("fullName", e.target.value)}
                 required
                 className="border-[rgba(55,50,47,0.12)] bg-white text-[#37322F] placeholder-[#9B9592]"
               />
@@ -98,6 +117,8 @@ export default function SignupPage() {
                 type="email"
                 placeholder="you@example.com"
                 name="email"
+                value={formValues.email}
+                onChange={(e) => updateField("email", e.target.value)}
                 required
                 className="border-[rgba(55,50,47,0.12)] bg-white text-[#37322F] placeholder-[#9B9592]"
               />
@@ -110,7 +131,12 @@ export default function SignupPage() {
               <Label htmlFor="userType" className="text-[#37322F] font-medium">
                 Account type
               </Label>
-              <input type="hidden" name="userType" value={userType} readOnly />
+              <input
+                type="hidden"
+                name="userType"
+                value={formValues.userType}
+                readOnly
+              />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -118,7 +144,7 @@ export default function SignupPage() {
                     variant="outline"
                     className="w-full justify-between border-[rgba(55,50,47,0.12)] bg-white text-[#37322F] hover:bg-[#F7F5F3] font-normal"
                   >
-                    {userTypeLabels[userType]}
+                    {userTypeLabels[formValues.userType]}
                     <ChevronDownIcon className="ml-2 size-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -129,7 +155,7 @@ export default function SignupPage() {
                   {userTypeValues.map((value) => (
                     <DropdownMenuItem
                       key={value}
-                      onSelect={() => setUserType(value)}
+                      onSelect={() => updateField("userType", value)}
                     >
                       {userTypeLabels[value]}
                     </DropdownMenuItem>
@@ -145,14 +171,31 @@ export default function SignupPage() {
               <Label htmlFor="password" className="text-[#37322F] font-medium">
                 Password
               </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                name="password"
-                required
-                className="border-[rgba(55,50,47,0.12)] bg-white text-[#37322F] placeholder-[#9B9592]"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  name="password"
+                  value={formValues.password}
+                  onChange={(e) => updateField("password", e.target.value)}
+                  required
+                  className="border-[rgba(55,50,47,0.12)] bg-white text-[#37322F] placeholder-[#9B9592] pr-10"
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowPassword((p) => !p)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9B9592] hover:text-[#37322F]"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOffIcon className="size-4" />
+                  ) : (
+                    <EyeIcon className="size-4" />
+                  )}
+                </button>
+              </div>
               {state?.errors?.password && (
                 <p className="text-red-600 text-sm">{state.errors.password}</p>
               )}
@@ -165,14 +208,35 @@ export default function SignupPage() {
               >
                 Confirm password
               </Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="••••••••"
-                name="confirmPassword"
-                required
-                className="border-[rgba(55,50,47,0.12)] bg-white text-[#37322F] placeholder-[#9B9592]"
-              />
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  name="confirmPassword"
+                  value={formValues.confirmPassword}
+                  onChange={(e) =>
+                    updateField("confirmPassword", e.target.value)
+                  }
+                  required
+                  className="border-[rgba(55,50,47,0.12)] bg-white text-[#37322F] placeholder-[#9B9592] pr-10"
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowConfirmPassword((p) => !p)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9B9592] hover:text-[#37322F]"
+                  aria-label={
+                    showConfirmPassword ? "Hide password" : "Show password"
+                  }
+                >
+                  {showConfirmPassword ? (
+                    <EyeOffIcon className="size-4" />
+                  ) : (
+                    <EyeIcon className="size-4" />
+                  )}
+                </button>
+              </div>
               {state?.errors?.confirmPassword && (
                 <p className="text-red-600 text-sm">
                   {state.errors.confirmPassword}
@@ -190,13 +254,13 @@ export default function SignupPage() {
               <input
                 type="hidden"
                 name="agreed"
-                value={agreed ? "on" : ""}
+                value={formValues.agreed ? "on" : ""}
                 readOnly
               />
               <Checkbox
                 id="agreed"
-                checked={agreed}
-                onCheckedChange={(c) => setAgreed(c === true)}
+                checked={formValues.agreed}
+                onCheckedChange={(c) => updateField("agreed", c === true)}
                 className="mt-1"
               />
               <label
