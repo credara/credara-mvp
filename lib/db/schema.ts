@@ -19,7 +19,6 @@ export const userRoleEnum = pgEnum("user_role", [
 export const verificationStatusEnum = pgEnum("verification_status", [
   "NOT_STARTED",
   "IN_PROGRESS",
-  "PENDING_REVIEW",
   "VERIFIED",
   "REJECTED",
 ]);
@@ -27,7 +26,6 @@ export const riskLevelEnum = pgEnum("risk_level", ["LOW", "MEDIUM", "HIGH"]);
 export const subscriptionStatusEnum = pgEnum("subscription_status", [
   "ACTIVE",
   "EXPIRED",
-  "PENDING",
   "NONE",
 ]);
 export const subscriptionPlanEnum = pgEnum("subscription_plan", [
@@ -60,6 +58,7 @@ export const profiles = pgTable("profiles", {
   riskLevel: riskLevelEnum("risk_level"),
   verificationStatus: verificationStatusEnum("verification_status"),
   lastVerificationDate: timestamp("last_verification_date"),
+  internalNotes: text("internal_notes"),
 
   // InstitutionUser
   isActive: boolean("is_active").default(true),
@@ -81,6 +80,28 @@ export const profiles = pgTable("profiles", {
   adminLevel: adminLevelEnum("admin_level"),
   lastActive: timestamp("last_active"),
 });
+
+export const auditLogActionEnum = pgEnum("audit_log_action", [
+  "VERIFICATION_APPROVE",
+  "VERIFICATION_REJECT",
+  "SCORE_OVERRIDE",
+  "CREDIT_ADD",
+  "SUBSCRIPTION_ACTIVATE",
+  "PROFILE_UPDATE",
+  "OTHER",
+]);
+
+export const auditLogs = pgTable("audit_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  adminId: uuid("admin_id").notNull(),
+  targetUserId: uuid("target_user_id").notNull(),
+  action: auditLogActionEnum("action").notNull(),
+  details: text("details"),
+});
+
+export type AuditLog = InferSelectModel<typeof auditLogs>;
+export type NewAuditLog = InferInsertModel<typeof auditLogs>;
 
 // Infer types from Postgres schema – use these as source of truth
 export type Profile = InferSelectModel<typeof profiles>;

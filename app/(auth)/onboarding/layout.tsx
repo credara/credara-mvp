@@ -13,11 +13,11 @@ export default async function OnboardingLayout({
   const supabase = await createClient();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id")
+    .select("id, credara_id")
     .eq("id", user.id)
     .maybeSingle();
 
-  if (profile) redirect("/home");
+  if (profile?.credara_id) redirect("/home");
 
   return <>{children}</>;
 }

@@ -1,23 +1,17 @@
 "use client";
 
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import React, { createContext, useContext } from "react";
 import { useAuth } from "./auth-context";
 import type { AnyUser } from "@/lib/types/users";
 import { mapProfileToUser } from "@/lib/types/profile-mapper";
 import type { Profile } from "@/lib/db/schema";
-import { createClient } from "@/lib/supabase/client";
 import { getUserProfile } from "@/app/actions/user";
+import { useQuery } from "@tanstack/react-query";
 
 type UserProfileContextType = {
   profile: AnyUser | null;
   loading: boolean;
-  refetch: () => Promise<void>;
+  refetch: () => void;
 };
 
 const UserProfileContext = createContext<UserProfileContextType | undefined>(
@@ -30,28 +24,21 @@ export function UserProfileProvider({
   children: React.ReactNode;
 }) {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<AnyUser | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  const loadProfile = useCallback(async () => {
-    if (!user?.id) {
-      setProfile(null);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    const p = await getUserProfile(user.id);
-    setProfile(mapProfileToUser(p as Profile));
-    setLoading(false);
-  }, [user?.id]);
-
-  useEffect(() => {
-    loadProfile();
-  }, [loadProfile]);
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["userProfile", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const p = await getUserProfile(user.id);
+      return mapProfileToUser(p as Profile);
+    },
+    enabled: !!user?.id,
+    staleTime: 60 * 1000,
+  });
 
   return (
     <UserProfileContext.Provider
-      value={{ profile, loading, refetch: loadProfile }}
+      value={{ profile: data ?? null, loading: isLoading, refetch }}
     >
       {children}
     </UserProfileContext.Provider>

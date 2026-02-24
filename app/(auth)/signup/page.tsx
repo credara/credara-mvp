@@ -6,32 +6,18 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   signUp,
   signInWithGoogleForm,
   type SignUpFormState,
 } from "@/app/actions/auth";
-import {
-  userTypeValues,
-  userTypeLabels,
-  type UserType,
-} from "@/app/(auth)/schema";
-import { ChevronDownIcon, EyeIcon, EyeOffIcon } from "lucide-react";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
 
 const initialFormValues = {
   fullName: "",
   email: "",
   password: "",
   confirmPassword: "",
-  agreed: false,
-  userType: "individual" as UserType,
 };
 
 function SubmitButton() {
@@ -128,46 +114,6 @@ export default function SignupPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="userType" className="text-[#37322F] font-medium">
-                Account type
-              </Label>
-              <input
-                type="hidden"
-                name="userType"
-                value={formValues.userType}
-                readOnly
-              />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full justify-between border-[rgba(55,50,47,0.12)] bg-white text-[#37322F] hover:bg-[#F7F5F3] font-normal"
-                  >
-                    {userTypeLabels[formValues.userType]}
-                    <ChevronDownIcon className="ml-2 size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="start"
-                  className="w-(--radix-dropdown-menu-trigger-width)"
-                >
-                  {userTypeValues.map((value) => (
-                    <DropdownMenuItem
-                      key={value}
-                      onSelect={() => updateField("userType", value)}
-                    >
-                      {userTypeLabels[value]}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-              {state?.errors?.userType && (
-                <p className="text-red-600 text-sm">{state.errors.userType}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="password" className="text-[#37322F] font-medium">
                 Password
               </Label>
@@ -248,43 +194,6 @@ export default function SignupPage() {
               <div className="p-3 bg-red-50 border border-red-200 rounded text-red-800 text-sm">
                 {state.error}
               </div>
-            )}
-
-            <div className="flex items-start space-x-2 pt-2">
-              <input
-                type="hidden"
-                name="agreed"
-                value={formValues.agreed ? "on" : ""}
-                readOnly
-              />
-              <Checkbox
-                id="agreed"
-                checked={formValues.agreed}
-                onCheckedChange={(c) => updateField("agreed", c === true)}
-                className="mt-1"
-              />
-              <label
-                htmlFor="agreed"
-                className="text-[#605A57] text-sm leading-relaxed cursor-pointer"
-              >
-                I agree to the{" "}
-                <Link
-                  href="#"
-                  className="text-[#37322F] hover:text-[#49423D] font-medium underline"
-                >
-                  Terms of Service
-                </Link>{" "}
-                and{" "}
-                <Link
-                  href="#"
-                  className="text-[#37322F] hover:text-[#49423D] font-medium underline"
-                >
-                  Privacy Policy
-                </Link>
-              </label>
-            </div>
-            {state?.errors?.agreed && (
-              <p className="text-red-600 text-sm">{state.errors.agreed}</p>
             )}
 
             <SubmitButton />

@@ -6,9 +6,7 @@ import {
   loginSchema,
   signUpSchema,
   forgotPasswordSchema,
-  onboardingSchema,
 } from "@/app/(auth)/schema";
-import { db, profiles } from "@/lib/db";
 
 export type LoginFormState = {
   error?: string;
@@ -27,7 +25,10 @@ export type OnboardingFormState = {
   errors?: Record<string, string>;
 };
 
-function getFormData(prev: unknown, formData: FormData | null): FormData {
+export async function getFormData(
+  prev: unknown,
+  formData: FormData | null
+): Promise<FormData> {
   if (formData && formData instanceof FormData) return formData;
   if (prev && prev instanceof FormData) return prev;
   return new FormData();
@@ -37,7 +38,7 @@ export async function signIn(
   prev: LoginFormState | FormData,
   formData?: FormData | null
 ): Promise<LoginFormState> {
-  const data = getFormData(prev, formData ?? null);
+  const data = await getFormData(prev, formData ?? null);
   const raw = {
     email: data.get("email") as string,
     password: data.get("password") as string,
@@ -62,14 +63,12 @@ export async function signUp(
   prev: SignUpFormState | FormData,
   formData?: FormData | null
 ): Promise<SignUpFormState> {
-  const data = getFormData(prev, formData ?? null);
+  const data = await getFormData(prev, formData ?? null);
   const raw = {
     fullName: data.get("fullName") as string,
     email: data.get("email") as string,
     password: data.get("password") as string,
     confirmPassword: data.get("confirmPassword") as string,
-    userType: data.get("userType") as string,
-    agreed: data.get("agreed") === "on",
   };
   const parsed = signUpSchema.safeParse(raw);
   if (!parsed.success) {
@@ -145,68 +144,6 @@ export async function resetPassword(
   );
   if (error) return { error: error.message };
   return { message: "Check your email for the reset link" };
-}
-
-const USER_TYPE_TO_ROLE = {
-  individual: "INDIVIDUAL",
-  landlord: "LANDLORD",
-  fintech: "FINTECH",
-} as const;
-
-export async function completeOnboarding(
-  prev: OnboardingFormState | FormData,
-  formData?: FormData | null
-): Promise<OnboardingFormState> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    redirect("/login");
-  }
-  try {
-    const data = getFormData(prev, formData ?? null);
-    const raw = {
-      userType: data.get("userType") as string,
-      phone: data.get("phone") as string,
-      businessName: (data.get("businessName") as string | null) || undefined,
-    };
-    const parsed = onboardingSchema.safeParse(raw);
-    if (!parsed.success) {
-      const errors: Record<string, string> = {};
-      parsed.error.flatten().fieldErrors &&
-        Object.entries(parsed.error.flatten().fieldErrors).forEach(([k, v]) => {
-          if (v?.[0]) errors[k] = v[0];
-        });
-      return { errors };
-    }
-
-    const role = USER_TYPE_TO_ROLE[parsed.data.userType];
-    const { data: existing } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (existing) {
-      redirect("/home");
-    }
-
-    await db.insert(profiles).values({
-      id: user.id,
-      phone: parsed.data.phone,
-      email: user.email ?? undefined,
-      fullName: user.user_metadata?.full_name ?? undefined,
-      role,
-      institutionType:
-        role === "LANDLORD" || role === "FINTECH" ? role : undefined,
-      businessName: parsed.data.businessName || undefined,
-    });
-  } catch (error) {
-    console.log(error);
-    return { error: "Failed to complete onboarding" };
-  }
-  redirect("/home");
 }
 
 export async function updatePassword(formData: FormData) {

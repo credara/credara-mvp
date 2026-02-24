@@ -36,16 +36,10 @@ export const signUpSchema = z
       .email("Invalid email address"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string().min(1, "Please confirm your password"),
-    userType: z.enum(userTypeValues),
-    agreed: z.boolean(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
-  })
-  .refine((data) => data.agreed === true, {
-    message: "You must agree to the Terms of Service and Privacy Policy",
-    path: ["agreed"],
   });
 
 export const forgotPasswordSchema = z.object({

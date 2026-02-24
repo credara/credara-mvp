@@ -12,10 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  completeOnboarding,
-  type OnboardingFormState,
-} from "@/app/actions/auth";
+import { completeOnboarding } from "@/app/actions/user";
 import {
   userTypeValues,
   userTypeLabels,
@@ -23,6 +20,7 @@ import {
 } from "@/app/(auth)/schema";
 import { ChevronDownIcon } from "lucide-react";
 import { toast } from "sonner";
+import { OnboardingFormState } from "@/app/actions/auth";
 
 const initialFormValues = {
   userType: "individual" as UserType,

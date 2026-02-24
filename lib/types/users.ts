@@ -13,12 +13,7 @@ export interface IndividualUser extends BaseUser {
   role: "INDIVIDUAL";
   trustScore?: number | null; // 0-1000 or null if not yet scored
   riskLevel?: "LOW" | "MEDIUM" | "HIGH" | null;
-  verificationStatus:
-    | "NOT_STARTED"
-    | "IN_PROGRESS"
-    | "PENDING_REVIEW"
-    | "VERIFIED"
-    | "REJECTED";
+  verificationStatus: "NOT_STARTED" | "IN_PROGRESS" | "VERIFIED" | "REJECTED";
   lastVerificationDate?: Date | null;
 }
 
@@ -41,13 +36,12 @@ export interface LandlordUser extends InstitutionUser {
 
 export interface FintechUser extends InstitutionUser {
   role: "FINTECH";
-  subscriptionStatus: "ACTIVE" | "EXPIRED" | "PENDING" | "NONE";
+  subscriptionStatus: "ACTIVE" | "EXPIRED" | "NONE";
   subscriptionPlan?: "MONTHLY" | "YEARLY" | null;
   subscriptionStartDate?: Date | null;
   subscriptionEndDate?: Date | null;
   totalReportsUnlocked: number; // Lifetime count (analytics)
 }
-
 
 // Admin (Credara Team Member)
 export interface AdminUser extends BaseUser {

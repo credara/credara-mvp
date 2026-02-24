@@ -1,7 +1,7 @@
 import { createClient } from "./server";
 import { mapProfileToUser } from "@/lib/types/profile-mapper";
-import type { Profile } from "@/lib/db/schema";
 import type { AnyUser } from "@/lib/types/users";
+import { supabaseRowToProfile } from "./supabase-profile";
 
 export async function getSession() {
   const supabase = await createClient();
@@ -33,5 +33,7 @@ export async function getProfile(): Promise<AnyUser | null> {
     .single();
 
   if (error || !data) return null;
-  return mapProfileToUser(data as unknown as Profile);
+  return mapProfileToUser(
+    supabaseRowToProfile(data as Record<string, unknown>)
+  );
 }
