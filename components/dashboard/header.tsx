@@ -18,9 +18,13 @@ export function Header() {
   const initials = email ? email.slice(0, 2).toUpperCase() : "?";
 
   return (
-    <header className="flex h-14 items-center justify-center border-b bg-white px-4">
-      <div className="max-w-[1060px] w-full mx-auto flex items-center justify-between">
-        <span className="text-lg font-semibold text-[#37322F]">Credara</span>
+    <header className="flex h-14 items-center sticky top-0 z-20 justify-center border-b bg-secondary-foreground px-4">
+      <div className="max-w-4xl w-full mx-auto flex items-center justify-between">
+        <img
+          src="/logo-primary-horizontal-black.png"
+          alt="Credara"
+          className="w-auto h-8"
+        />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button

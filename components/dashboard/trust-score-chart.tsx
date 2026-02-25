@@ -2,6 +2,7 @@
 
 import {
   Label,
+  PolarAngleAxis,
   PolarGrid,
   PolarRadiusAxis,
   RadialBar,
@@ -15,15 +16,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
-import { IndividualUser } from "@/lib/types/users";
+import { scoreToRiskLevel, type RiskLevel } from "@/lib/trust-score";
 
 interface TrustScoreChartProps {
   score: number;
-  riskLevel: IndividualUser["riskLevel"];
+  children?: React.ReactNode;
 }
 
-export function TrustScoreChart({ score, riskLevel }: TrustScoreChartProps) {
-  const getRiskColor = (level: IndividualUser["riskLevel"]) => {
+export function TrustScoreChart({ score, children }: TrustScoreChartProps) {
+  const riskLevel = scoreToRiskLevel(score);
+
+  const getRiskColor = (level: RiskLevel | null) => {
     switch (level) {
       case "LOW":
         return "#10b981";
@@ -36,7 +39,7 @@ export function TrustScoreChart({ score, riskLevel }: TrustScoreChartProps) {
     }
   };
 
-  const getRiskLabel = (level: IndividualUser["riskLevel"]) => {
+  const getRiskLabel = (level: RiskLevel | null) => {
     switch (level) {
       case "LOW":
         return "Low Risk";
@@ -49,21 +52,14 @@ export function TrustScoreChart({ score, riskLevel }: TrustScoreChartProps) {
     }
   };
 
-  const chartData = [
-    {
-      score: score,
-      fill: getRiskColor(riskLevel ?? "LOW"),
-    },
-  ];
+  const chartData = [{ score, fill: getRiskColor(riskLevel) }];
 
   const chartConfig = {
-    score: {
-      label: "Trust Score",
-    },
+    score: { label: "Trust Score" },
   } satisfies ChartConfig;
 
   return (
-    <Card className="flex flex-col border border-[rgba(55,50,47,0.12)]">
+    <Card className="flex flex-col border shadow-none border-border">
       <CardHeader className="items-center pb-0">
         <CardTitle>Trust Score</CardTitle>
         <CardDescription>
@@ -77,10 +73,12 @@ export function TrustScoreChart({ score, riskLevel }: TrustScoreChartProps) {
         >
           <RadialBarChart
             data={chartData}
-            endAngle={180}
+            startAngle={180}
+            endAngle={0}
             innerRadius={80}
             outerRadius={140}
           >
+            <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
             <PolarGrid
               gridType="circle"
               radialLines={false}
@@ -88,7 +86,11 @@ export function TrustScoreChart({ score, riskLevel }: TrustScoreChartProps) {
               className="first:fill-[#f0ede8] last:fill-[#f7f5f3]"
               polarRadius={[86, 74]}
             />
-            <RadialBar dataKey="score" background cornerRadius={10} />
+            <RadialBar
+              dataKey="score"
+              background={{ fill: "#f7f5f3" }}
+              cornerRadius={10}
+            />
             <PolarRadiusAxis
               type="number"
               domain={[0, 100]}
@@ -131,6 +133,9 @@ export function TrustScoreChart({ score, riskLevel }: TrustScoreChartProps) {
           </RadialBarChart>
         </ChartContainer>
       </CardContent>
+      {children != null ? (
+        <CardContent className="pt-0">{children}</CardContent>
+      ) : null}
     </Card>
   );
 }

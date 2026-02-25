@@ -1,9 +1,13 @@
 export default function FooterSection() {
   return (
     <div className="w-full pt-10 pb-12 flex flex-col justify-center items-center gap-6">
-      <h2 className="bg-gradient-to-r from-amber-600 via-amber-700 to-[#49423D] bg-clip-text text-transparent text-5xl md:text-7xl font-bold font-sans tracking-tight">
-        Credara
-      </h2>
+      <div className="w-full max-w-3xl">
+        <img
+          src="/logo-primary-horizontal-black.png"
+          alt="Credara"
+          className="w-full h-auto"
+        />
+      </div>
       <div className="flex justify-center items-center gap-4">
         <a
           href="https://x.com"

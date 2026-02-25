@@ -7,16 +7,15 @@ import {
   getAdminUserById,
   updateAgentVerification,
   updateAgentScore,
-  updateAgentProfile,
   updateAgentInternalNotes,
 } from "@/app/actions/admin";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { TrustScoreChart } from "@/components/dashboard/trust-score-chart";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Check, X } from "lucide-react";
+import { ArrowLeft, Check, Copy, Pencil, Shield, X } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AdminAgentDetailPage({
@@ -44,32 +43,11 @@ export default function AdminAgentDetailPage({
   });
 
   const scoreMutation = useMutation({
-    mutationFn: ({
-      trustScore,
-      riskLevel,
-    }: {
-      trustScore: number;
-      riskLevel?: "LOW" | "MEDIUM" | "HIGH";
-    }) => updateAgentScore(id, trustScore, riskLevel),
+    mutationFn: (trustScore: number) => updateAgentScore(id, trustScore),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "agent", id] });
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
       toast.success("Score updated");
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
-  });
-
-  const profileMutation = useMutation({
-    mutationFn: (data: {
-      fullName?: string;
-      email?: string | null;
-      riskLevel?: "LOW" | "MEDIUM" | "HIGH";
-      credaraId?: string;
-    }) => updateAgentProfile(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin", "agent", id] });
-      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
-      toast.success("Profile updated");
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
@@ -99,8 +77,17 @@ export default function AdminAgentDetailPage({
     );
   }
 
+  const displayName =
+    profile.fullName ?? profile.email ?? profile.phone ?? "Agent";
+
+  const copyCredaraId = () => {
+    if (!profile.credaraId) return;
+    void navigator.clipboard.writeText(profile.credaraId);
+    toast.success("Copied to clipboard");
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-4xl w-full space-y-6 px-4 py-6">
       <Link
         href="/admin/agents"
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
@@ -108,261 +95,195 @@ export default function AdminAgentDetailPage({
         <ArrowLeft className="size-4" />
         Back to POS Agents
       </Link>
-      <h1 className="text-2xl font-semibold">
-        {profile.fullName ?? profile.email ?? profile.phone}
-      </h1>
+
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {displayName}
+          </h1>
+          <div className="mt-1 flex items-center gap-2">
+            {profile.credaraId && (
+              <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                {profile.credaraId}
+                <button
+                  type="button"
+                  onClick={copyCredaraId}
+                  className="rounded p-0.5 hover:bg-muted"
+                  aria-label="Copy Credara ID"
+                >
+                  <Copy className="size-4" />
+                </button>
+              </span>
+            )}
+            <Badge
+              variant={
+                profile.verificationStatus === "VERIFIED"
+                  ? "default"
+                  : profile.verificationStatus === "REJECTED"
+                  ? "destructive"
+                  : "secondary"
+              }
+            >
+              {profile.verificationStatus ?? "—"}
+            </Badge>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="default"
+            onClick={() => verifyMutation.mutate("VERIFIED")}
+            disabled={
+              verifyMutation.isPending ||
+              profile.verificationStatus === "VERIFIED"
+            }
+          >
+            <Check className="mr-2 size-4" />
+            Approve
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => verifyMutation.mutate("REJECTED")}
+            disabled={
+              verifyMutation.isPending ||
+              profile.verificationStatus === "REJECTED"
+            }
+          >
+            <X className="mr-2 size-4" />
+            Reject
+          </Button>
+        </div>
+      </header>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-2">Profile</CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <p>
-              <span className="text-muted-foreground">Email:</span>{" "}
-              {profile.email ?? "—"}
-            </p>
-            <p>
-              <span className="text-muted-foreground">Phone:</span>{" "}
-              {profile.phone}
-            </p>
-            <p>
-              <span className="text-muted-foreground">Credara ID:</span>{" "}
-              {profile.credaraId ?? "—"}
-            </p>
-            <p>
-              <span className="text-muted-foreground">Status:</span>{" "}
-              <Badge variant="outline">
-                {profile.verificationStatus ?? "—"}
-              </Badge>
-            </p>
-            <p>
-              <span className="text-muted-foreground">Trust Score:</span>{" "}
-              {profile.trustScore ?? "—"}
-            </p>
-            <p>
-              <span className="text-muted-foreground">Risk Level:</span>{" "}
-              {profile.riskLevel ?? "—"}
-            </p>
-          </CardContent>
-        </Card>
+        <section>
+          <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Personal information
+          </h2>
+          <dl className="space-y-3 text-sm">
+            <div>
+              <dt className="text-muted-foreground">Full Name</dt>
+              <dd className="font-medium">{profile.fullName ?? "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Email Address</dt>
+              <dd className="font-medium">{profile.email ?? "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Phone Number</dt>
+              <dd className="font-medium">{profile.phone ?? "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Credara ID</dt>
+              <dd className="font-medium">{profile.credaraId ?? "—"}</dd>
+            </div>
+          </dl>
+        </section>
 
-        <Card>
-          <CardHeader className="pb-2">Verification</CardHeader>
-          <CardContent className="flex gap-2">
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => verifyMutation.mutate("VERIFIED")}
-              disabled={
-                verifyMutation.isPending ||
-                profile.verificationStatus === "VERIFIED"
-              }
-            >
-              <Check className="mr-2 size-4" />
-              Approve
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => verifyMutation.mutate("REJECTED")}
-              disabled={
-                verifyMutation.isPending ||
-                profile.verificationStatus === "REJECTED"
-              }
-            >
-              <X className="mr-2 size-4" />
-              Reject
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-2">Score Override</CardHeader>
-          <CardContent>
-            <AgentScoreForm
-              currentScore={profile.trustScore}
-              currentRisk={profile.riskLevel}
-              onSubmit={(trustScore, riskLevel) =>
-                scoreMutation.mutate({ trustScore, riskLevel })
-              }
-              isPending={scoreMutation.isPending}
-            />
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-2">Manual Data</CardHeader>
-          <CardContent>
-            <AgentProfileForm
-              fullName={profile.fullName}
-              email={profile.email}
-              riskLevel={profile.riskLevel}
-              credaraId={profile.credaraId}
-              onSubmit={(data) => profileMutation.mutate(data)}
-              isPending={profileMutation.isPending}
-            />
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-2">Internal Notes</CardHeader>
-          <CardContent>
-            <AgentNotesForm
-              notes={profile.internalNotes ?? ""}
-              onSubmit={(notes) => notesMutation.mutate(notes)}
-              isPending={notesMutation.isPending}
-            />
-          </CardContent>
-        </Card>
+        <section>
+          <h2 className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <Shield className="size-4" />
+            Risk assessment
+          </h2>
+          <AgentScoreForm
+            key={`score-${profile.trustScore ?? 0}`}
+            currentScore={profile.trustScore}
+            onSubmit={(trustScore) => scoreMutation.mutate(trustScore)}
+            isPending={scoreMutation.isPending}
+          />
+        </section>
       </div>
+
+      <section className="border-t pt-6">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Additional notes
+        </h2>
+        <AgentNotesForm
+          notes={profile.internalNotes ?? ""}
+          onSubmit={(notes) => notesMutation.mutate(notes)}
+          isPending={notesMutation.isPending}
+        />
+      </section>
     </div>
   );
 }
 
 function AgentScoreForm({
   currentScore,
-  currentRisk,
   onSubmit,
   isPending,
 }: {
   currentScore: number | null;
-  currentRisk: "LOW" | "MEDIUM" | "HIGH" | null;
-  onSubmit: (trustScore: number, riskLevel?: "LOW" | "MEDIUM" | "HIGH") => void;
+  onSubmit: (trustScore: number) => void;
   isPending: boolean;
 }) {
-  const scoreRef = React.useRef<HTMLInputElement>(null);
-  const riskRef = React.useRef<HTMLSelectElement>(null);
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [inputValue, setInputValue] = React.useState(
+    currentScore != null ? String(currentScore) : ""
+  );
+  const parsedScore =
+    inputValue === "" ? 0 : Math.min(100, Math.max(0, Number(inputValue) || 0));
+  const displayScore = isEditing ? parsedScore : currentScore ?? 0;
+  const originalScore = currentScore ?? 0;
+  const scoreHasChanged = parsedScore !== originalScore;
+
+  const startEditing = () => {
+    setInputValue(currentScore != null ? String(currentScore) : "");
+    setIsEditing(true);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const score = Number(scoreRef.current?.value ?? 0);
-    const risk = riskRef.current?.value as "LOW" | "MEDIUM" | "HIGH" | "";
-    onSubmit(score, risk || undefined);
+    onSubmit(parsedScore);
+    setIsEditing(false);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-wrap gap-4">
-      <div className="flex items-end gap-2">
-        <div>
-          <Label htmlFor="trustScore" className="text-xs">
-            Trust Score (0–1000)
-          </Label>
-          <Input
-            id="trustScore"
-            ref={scoreRef}
-            type="number"
-            min={0}
-            max={1000}
-            defaultValue={currentScore ?? ""}
-            className="w-24"
-          />
-        </div>
-        <div>
-          <Label htmlFor="riskLevel" className="text-xs">
-            Risk
-          </Label>
-          <select
-            id="riskLevel"
-            ref={riskRef}
-            className="flex h-9 w-[100px] rounded-md border border-input bg-background px-3 py-1 text-sm"
-            defaultValue={currentRisk ?? ""}
+    <div className="relative">
+      <TrustScoreChart score={displayScore}>
+        {isEditing && (
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-wrap items-end gap-3"
           >
-            <option value="">—</option>
-            <option value="LOW">Low</option>
-            <option value="MEDIUM">Medium</option>
-            <option value="HIGH">High</option>
-          </select>
-        </div>
-        <Button type="submit" size="sm" disabled={isPending}>
-          Update Score
-        </Button>
-      </div>
-    </form>
-  );
-}
-
-function AgentProfileForm({
-  fullName,
-  email,
-  riskLevel,
-  credaraId,
-  onSubmit,
-  isPending,
-}: {
-  fullName: string | null;
-  email: string | null;
-  riskLevel: "LOW" | "MEDIUM" | "HIGH" | null;
-  credaraId: string | null;
-  onSubmit: (data: {
-    fullName?: string;
-    email?: string | null;
-    riskLevel?: "LOW" | "MEDIUM" | "HIGH";
-    credaraId?: string;
-  }) => void;
-  isPending: boolean;
-}) {
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const data = new FormData(form);
-    onSubmit({
-      fullName: (data.get("fullName") as string) || undefined,
-      email: (data.get("email") as string) || null,
-      riskLevel:
-        (data.get("riskLevel") as "LOW" | "MEDIUM" | "HIGH") || undefined,
-      credaraId: (data.get("credaraId") as string) || undefined,
-    });
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
-      <div>
-        <Label htmlFor="fullName">Full Name</Label>
-        <Input
-          id="fullName"
-          name="fullName"
-          defaultValue={fullName ?? ""}
-          className="mt-1"
-        />
-      </div>
-      <div>
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          defaultValue={email ?? ""}
-          className="mt-1"
-        />
-      </div>
-      <div>
-        <Label htmlFor="credaraId">Credara ID</Label>
-        <Input
-          id="credaraId"
-          name="credaraId"
-          defaultValue={credaraId ?? ""}
-          className="mt-1"
-        />
-      </div>
-      <div>
-        <Label htmlFor="riskLevel">Risk Level</Label>
-        <select
-          id="riskLevel"
-          name="riskLevel"
-          className="mt-1 flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
-          defaultValue={riskLevel ?? ""}
+            <div className="space-y-2">
+              <Label htmlFor="trustScore">Trust Score</Label>
+              <Input
+                id="trustScore"
+                type="number"
+                min={0}
+                max={100}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                className="w-24"
+              />
+            </div>
+            <Button type="submit" disabled={isPending || !scoreHasChanged}>
+              Update Score
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditing(false)}
+            >
+              Cancel
+            </Button>
+          </form>
+        )}
+      </TrustScoreChart>
+      {!isEditing && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={startEditing}
+          className="absolute bottom-4 right-4"
         >
-          <option value="">—</option>
-          <option value="LOW">Low</option>
-          <option value="MEDIUM">Medium</option>
-          <option value="HIGH">High</option>
-        </select>
-      </div>
-      <div className="sm:col-span-2">
-        <Button type="submit" disabled={isPending}>
-          Save Profile
+          <Pencil className="mr-2 size-4" />
+          Edit
         </Button>
-      </div>
-    </form>
+      )}
+    </div>
   );
 }
 
@@ -389,8 +310,8 @@ function AgentNotesForm({
         name="notes"
         defaultValue={notes}
         placeholder="Internal notes (visible only to admins)"
-        rows={4}
-        className="mb-3"
+        rows={6}
+        className="mb-3 min-h-48 resize-none"
       />
       <Button type="submit" size="sm" disabled={isPending}>
         Save Notes

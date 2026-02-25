@@ -162,11 +162,10 @@ export async function updateAgentVerification(
   });
 }
 
-export async function updateAgentScore(
-  userId: string,
-  trustScore: number,
-  riskLevel?: "LOW" | "MEDIUM" | "HIGH"
-) {
+const TRUST_SCORE_MIN = 1;
+const TRUST_SCORE_MAX = 100;
+
+export async function updateAgentScore(userId: string, trustScore: number) {
   const { user } = await requireAdmin();
 
   const [target] = await db
@@ -178,21 +177,21 @@ export async function updateAgentScore(
   if (!target || target.role !== "INDIVIDUAL")
     throw new Error("User not found or not an individual");
 
-  const updates: Record<string, unknown> = {
-    trustScore: Math.min(1000, Math.max(0, trustScore)),
-    updatedAt: new Date(),
-  };
-  if (riskLevel) updates.riskLevel = riskLevel;
+  const clamped = Math.min(
+    TRUST_SCORE_MAX,
+    Math.max(TRUST_SCORE_MIN, trustScore)
+  );
 
-  await db.update(profiles).set(updates).where(eq(profiles.id, userId));
+  await db
+    .update(profiles)
+    .set({ trustScore: clamped, updatedAt: new Date() })
+    .where(eq(profiles.id, userId));
 
   await db.insert(auditLogs).values({
     adminId: user.id,
     targetUserId: userId,
     action: "SCORE_OVERRIDE",
-    details: `Trust score set to ${trustScore}${
-      riskLevel ? `, risk: ${riskLevel}` : ""
-    }`,
+    details: `Trust score set to ${clamped}`,
   });
 }
 
@@ -201,7 +200,6 @@ export async function updateAgentProfile(
   data: {
     fullName?: string;
     email?: string | null;
-    riskLevel?: "LOW" | "MEDIUM" | "HIGH";
     credaraId?: string;
   }
 ) {
@@ -219,7 +217,6 @@ export async function updateAgentProfile(
   const updates: Record<string, unknown> = { updatedAt: new Date() };
   if (data.fullName !== undefined) updates.fullName = data.fullName;
   if (data.email !== undefined) updates.email = data.email;
-  if (data.riskLevel !== undefined) updates.riskLevel = data.riskLevel;
   if (data.credaraId !== undefined) updates.credaraId = data.credaraId;
 
   await db.update(profiles).set(updates).where(eq(profiles.id, userId));

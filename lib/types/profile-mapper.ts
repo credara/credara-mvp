@@ -1,5 +1,6 @@
 import type { Profile } from "@/lib/db/schema";
 import type { AnyUser } from "./users";
+import { scoreToRiskLevel } from "@/lib/trust-score";
 
 /**
  * Maps a Drizzle/Postgres Profile row to the app's AnyUser discriminated union.
@@ -22,7 +23,7 @@ export function mapProfileToUser(profile: Profile): AnyUser {
         ...base,
         role: "INDIVIDUAL",
         trustScore: profile.trustScore ?? null,
-        riskLevel: profile.riskLevel ?? null,
+        riskLevel: scoreToRiskLevel(profile.trustScore ?? null) ?? null,
         verificationStatus: profile.verificationStatus ?? "NOT_STARTED",
         lastVerificationDate: profile.lastVerificationDate ?? null,
       } as AnyUser;

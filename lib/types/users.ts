@@ -1,3 +1,5 @@
+import { RiskLevel } from "../trust-score";
+
 interface BaseUser {
   id: string; // UUID or string ID
   createdAt: Date;
@@ -11,8 +13,8 @@ interface BaseUser {
 // Individual User (POS agents)
 export interface IndividualUser extends BaseUser {
   role: "INDIVIDUAL";
-  trustScore?: number | null; // 0-1000 or null if not yet scored
-  riskLevel?: "LOW" | "MEDIUM" | "HIGH" | null;
+  trustScore?: number | null; // 1-100 or null if not yet scored
+  riskLevel?: RiskLevel | null;
   verificationStatus: "NOT_STARTED" | "IN_PROGRESS" | "VERIFIED" | "REJECTED";
   lastVerificationDate?: Date | null;
 }
