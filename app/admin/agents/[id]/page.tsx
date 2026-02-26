@@ -8,14 +8,25 @@ import {
   updateAgentVerification,
   updateAgentScore,
   updateAgentInternalNotes,
+  updateAgentTrustReport,
 } from "@/app/actions/admin";
+import { TrustReportForm } from "@/components/admin/trust-report-form";
+import { parseTrustReportContent } from "@/lib/types/trust-report";
 import { TrustScoreChart } from "@/components/dashboard/trust-score-chart";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Check, Copy, Pencil, Shield, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Copy,
+  Loader2,
+  Pencil,
+  Shield,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export default function AdminAgentDetailPage({
@@ -61,10 +72,24 @@ export default function AdminAgentDetailPage({
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
 
+  const trustReportMutation = useMutation({
+    mutationFn: (content: Parameters<typeof updateAgentTrustReport>[1]) =>
+      updateAgentTrustReport(id, content),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "agent", id] });
+      toast.success("Trust report saved");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+  });
+
   if (isLoading || !profile) {
     return (
       <div className="py-8 text-center text-muted-foreground">
-        {isLoading ? "Loading..." : "User not found"}
+        {isLoading ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <span>User not found</span>
+        )}
       </div>
     );
   }
@@ -192,6 +217,20 @@ export default function AdminAgentDetailPage({
           />
         </section>
       </div>
+
+      <section className="border-t pt-6">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Trust report (for unlocked reports)
+        </h2>
+        <TrustReportForm
+          key={id}
+          initialContent={parseTrustReportContent(
+            (profile as { trustReportContent?: unknown }).trustReportContent
+          )}
+          onSubmit={(content) => trustReportMutation.mutate(content)}
+          isPending={trustReportMutation.isPending}
+        />
+      </section>
 
       <section className="border-t pt-6">
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">

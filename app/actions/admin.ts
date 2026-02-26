@@ -3,6 +3,7 @@
 import { eq, and, or, ne, desc, ilike } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 import { db, profiles, auditLogs } from "@/lib/db";
+import type { TrustReportContent } from "@/lib/types/trust-report";
 
 const ROLE_MAP = {
   agents: "INDIVIDUAL" as const,
@@ -240,9 +241,42 @@ export async function updateAgentInternalNotes(userId: string, notes: string) {
     .where(eq(profiles.id, userId));
 }
 
+export async function updateAgentTrustReport(
+  userId: string,
+  content: TrustReportContent
+) {
+  await requireAdmin();
+
+  const [target] = await db
+    .select()
+    .from(profiles)
+    .where(eq(profiles.id, userId))
+    .limit(1);
+
+  if (!target || target.role !== "INDIVIDUAL")
+    throw new Error("User not found or not an individual");
+
+  await db
+    .update(profiles)
+    .set({
+      trustReportContent: content as unknown as Record<string, unknown>,
+      updatedAt: new Date(),
+    })
+    .where(eq(profiles.id, userId));
+}
+
 export async function getAdminAuditLogs(params: {
   page?: number;
   pageSize?: number;
+  targetUserId?: string;
+  action?:
+    | "CREDIT_ADD"
+    | "SUBSCRIPTION_ACTIVATE"
+    | "VERIFICATION_APPROVE"
+    | "VERIFICATION_REJECT"
+    | "SCORE_OVERRIDE"
+    | "PROFILE_UPDATE"
+    | "OTHER";
 }) {
   await requireAdmin();
 
@@ -250,15 +284,115 @@ export async function getAdminAuditLogs(params: {
   const pageSize = Math.min(params.pageSize ?? 20, 100);
   const offset = (page - 1) * pageSize;
 
-  const [data, totalCount] = await Promise.all([
-    db
-      .select()
-      .from(auditLogs)
-      .orderBy(desc(auditLogs.createdAt))
-      .limit(pageSize)
-      .offset(offset),
-    db.$count(auditLogs),
-  ]);
+  const conditions = [];
+  if (params.targetUserId)
+    conditions.push(eq(auditLogs.targetUserId, params.targetUserId));
+  if (params.action) conditions.push(eq(auditLogs.action, params.action));
+  const where = conditions.length ? and(...conditions) : undefined;
+
+  const dataPromise = where
+    ? db
+        .select()
+        .from(auditLogs)
+        .where(where)
+        .orderBy(desc(auditLogs.createdAt))
+        .limit(pageSize)
+        .offset(offset)
+    : db
+        .select()
+        .from(auditLogs)
+        .orderBy(desc(auditLogs.createdAt))
+        .limit(pageSize)
+        .offset(offset);
+
+  const countPromise = where
+    ? db.$count(auditLogs, where)
+    : db.$count(auditLogs);
+  const [data, totalCount] = await Promise.all([dataPromise, countPromise]);
 
   return { data, totalCount };
+}
+
+export async function addCreditsToLandlord(
+  userId: string,
+  amount: number,
+  paymentReference?: string
+) {
+  const { user } = await requireAdmin();
+
+  const [target] = await db
+    .select()
+    .from(profiles)
+    .where(eq(profiles.id, userId))
+    .limit(1);
+
+  if (!target || target.role !== "LANDLORD")
+    throw new Error("User not found or not a landlord");
+
+  const newBalance = (target.creditBalance ?? 0) + amount;
+  const newTotal = (target.totalCreditsPurchased ?? 0) + amount;
+
+  await db
+    .update(profiles)
+    .set({
+      creditBalance: newBalance,
+      totalCreditsPurchased: newTotal,
+      lastCreditPurchaseDate: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(profiles.id, userId));
+
+  const details = paymentReference
+    ? `Added ${amount} credits. Payment ref: ${paymentReference}`
+    : `Added ${amount} credits`;
+
+  await db.insert(auditLogs).values({
+    adminId: user.id,
+    targetUserId: userId,
+    action: "CREDIT_ADD",
+    details,
+  });
+}
+
+export async function updateFintechSubscription(
+  userId: string,
+  data: {
+    subscriptionStatus: "ACTIVE" | "EXPIRED" | "NONE";
+    subscriptionPlan?: "MONTHLY" | "YEARLY";
+    subscriptionStartDate?: Date | null;
+    subscriptionEndDate?: Date | null;
+  }
+) {
+  const { user } = await requireAdmin();
+
+  const [target] = await db
+    .select()
+    .from(profiles)
+    .where(eq(profiles.id, userId))
+    .limit(1);
+
+  if (!target || target.role !== "FINTECH")
+    throw new Error("User not found or not a fintech");
+
+  const updates: Record<string, unknown> = {
+    subscriptionStatus: data.subscriptionStatus,
+    updatedAt: new Date(),
+  };
+  if (data.subscriptionPlan !== undefined)
+    updates.subscriptionPlan = data.subscriptionPlan;
+  if (data.subscriptionStartDate !== undefined)
+    updates.subscriptionStartDate = data.subscriptionStartDate;
+  if (data.subscriptionEndDate !== undefined)
+    updates.subscriptionEndDate = data.subscriptionEndDate;
+
+  await db.update(profiles).set(updates).where(eq(profiles.id, userId));
+
+  await db.insert(auditLogs).values({
+    adminId: user.id,
+    targetUserId: userId,
+    action: "SUBSCRIPTION_ACTIVATE",
+    details: `Subscription set to ${data.subscriptionStatus}${
+      data.subscriptionPlan ? ` – ${data.subscriptionPlan}` : ""
+    }`,
+  });
 }

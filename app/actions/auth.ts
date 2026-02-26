@@ -56,7 +56,7 @@ export async function signIn(
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) return { error: error.message };
-  redirect("/");
+  redirect("/home");
 }
 
 export async function signUp(

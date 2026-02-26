@@ -20,10 +20,15 @@ import { scoreToRiskLevel, type RiskLevel } from "@/lib/trust-score";
 
 interface TrustScoreChartProps {
   score: number;
+  compact?: boolean;
   children?: React.ReactNode;
 }
 
-export function TrustScoreChart({ score, children }: TrustScoreChartProps) {
+export function TrustScoreChart({
+  score,
+  compact = false,
+  children,
+}: TrustScoreChartProps) {
   const riskLevel = scoreToRiskLevel(score);
 
   const getRiskColor = (level: RiskLevel | null) => {
@@ -58,25 +63,40 @@ export function TrustScoreChart({ score, children }: TrustScoreChartProps) {
     score: { label: "Trust Score" },
   } satisfies ChartConfig;
 
+  const size = compact
+    ? { maxH: "100px", innerR: 28, outerR: 44 }
+    : { maxH: "300px", innerR: 80, outerR: 140 };
+  const polarRadius = compact ? [30, 26] : [86, 74];
+  const textSize = compact ? "text-xl" : "text-4xl";
+  const subTextOffset = compact ? 14 : 24;
+
   return (
-    <Card className="flex flex-col border shadow-none border-border">
-      <CardHeader className="items-center pb-0">
-        <CardTitle>Trust Score</CardTitle>
-        <CardDescription>
-          Your current trustworthiness assessment
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex-1 pb-0">
+    <Card
+      className={`flex flex-col border shadow-none border-border ${
+        compact ? "py-1 px-2" : ""
+      }`}
+    >
+      {!compact && (
+        <CardHeader className="items-center pb-0">
+          <CardTitle>Trust Score</CardTitle>
+          <CardDescription>
+            Your current trustworthiness assessment
+          </CardDescription>
+        </CardHeader>
+      )}
+      <CardContent className={compact ? "flex-1 p-0 pb-1" : "flex-1 pb-0"}>
         <ChartContainer
           config={chartConfig}
-          className="mx-auto aspect-square max-h-[300px]"
+          className={`mx-auto aspect-square ${
+            compact ? "max-h-[100px]" : "max-h-[300px]"
+          }`}
         >
           <RadialBarChart
             data={chartData}
             startAngle={180}
             endAngle={0}
-            innerRadius={80}
-            outerRadius={140}
+            innerRadius={size.innerR}
+            outerRadius={size.outerR}
           >
             <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
             <PolarGrid
@@ -84,7 +104,7 @@ export function TrustScoreChart({ score, children }: TrustScoreChartProps) {
               radialLines={false}
               stroke="none"
               className="first:fill-[#f0ede8] last:fill-[#f7f5f3]"
-              polarRadius={[86, 74]}
+              polarRadius={polarRadius}
             />
             <RadialBar
               dataKey="score"
@@ -111,15 +131,15 @@ export function TrustScoreChart({ score, children }: TrustScoreChartProps) {
                         <tspan
                           x={viewBox.cx}
                           y={viewBox.cy}
-                          className="fill-[#37322F] text-4xl font-bold"
+                          className={`fill-[#37322F] font-bold ${textSize}`}
                         >
                           {score}
                         </tspan>
                         {riskLevel != null && (
                           <tspan
                             x={viewBox.cx}
-                            y={(viewBox.cy || 0) + 24}
-                            className="fill-[#605A57] text-sm font-medium"
+                            y={(viewBox.cy || 0) + subTextOffset}
+                            className="fill-[#605A57] text-xs font-medium"
                           >
                             {getRiskLabel(riskLevel)}
                           </tspan>
@@ -133,7 +153,7 @@ export function TrustScoreChart({ score, children }: TrustScoreChartProps) {
           </RadialBarChart>
         </ChartContainer>
       </CardContent>
-      {children != null ? (
+      {children != null && !compact ? (
         <CardContent className="pt-0">{children}</CardContent>
       ) : null}
     </Card>

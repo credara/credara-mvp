@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" ADD COLUMN "trust_report_content" jsonb;

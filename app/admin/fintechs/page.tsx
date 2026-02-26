@@ -7,6 +7,7 @@ import { DataTable } from "@/components/admin/data-table";
 import { usersColumns } from "../users/columns";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 const PAGE_SIZE = 10;
 
@@ -50,7 +51,7 @@ export default function AdminFintechsPage() {
       </div>
       {isLoading ? (
         <div className="py-8 text-center text-muted-foreground">
-          Loading...
+          <Loader2 className="size-4 animate-spin" />
         </div>
       ) : (
         <DataTable

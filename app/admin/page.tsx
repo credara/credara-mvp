@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 
 const PAGE_SIZE = 10;
 
@@ -127,7 +127,10 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      <div className="space-y-4">
+      <section className="space-y-4">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Users
+        </h2>
         <div className="flex items-center gap-4">
           <div className="flex gap-2">
             <Input
@@ -249,7 +252,7 @@ export default function AdminDashboardPage() {
 
         {isLoading ? (
           <div className="py-8 text-center text-muted-foreground">
-            Loading...
+            <Loader2 className="size-4 animate-spin" />
           </div>
         ) : (
           <DataTable
@@ -261,7 +264,7 @@ export default function AdminDashboardPage() {
             onPageChange={setPage}
           />
         )}
-      </div>
+      </section>
     </div>
   );
 }

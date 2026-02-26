@@ -7,6 +7,7 @@ import {
   integer,
   boolean,
   pgEnum,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
 
@@ -59,6 +60,7 @@ export const profiles = pgTable("profiles", {
   verificationStatus: verificationStatusEnum("verification_status"),
   lastVerificationDate: timestamp("last_verification_date"),
   internalNotes: text("internal_notes"),
+  trustReportContent: jsonb("trust_report_content"),
 
   // InstitutionUser
   isActive: boolean("is_active").default(true),
@@ -100,8 +102,21 @@ export const auditLogs = pgTable("audit_logs", {
   details: text("details"),
 });
 
+export const reportUnlocks = pgTable("report_unlocks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  institutionUserId: uuid("institution_user_id").notNull(),
+  targetProfileId: uuid("target_profile_id").notNull(),
+  targetUserName: varchar("target_user_name", { length: 255 }),
+  targetCredaraId: varchar("target_credara_id", { length: 64 }),
+  scoreAtUnlock: integer("score_at_unlock"),
+  riskLevel: riskLevelEnum("risk_level"),
+});
+
 export type AuditLog = InferSelectModel<typeof auditLogs>;
 export type NewAuditLog = InferInsertModel<typeof auditLogs>;
+export type ReportUnlock = InferSelectModel<typeof reportUnlocks>;
+export type NewReportUnlock = InferInsertModel<typeof reportUnlocks>;
 
 // Infer types from Postgres schema – use these as source of truth
 export type Profile = InferSelectModel<typeof profiles>;
