@@ -27,7 +27,7 @@ export function InstitutionHeader() {
           <Button
             variant="ghost"
             size="icon"
-            className="shrink-0"
+            className="shrink-0 md:hidden block"
             onClick={() => setOpen(true)}
             aria-label="Open menu"
           >
@@ -43,7 +43,7 @@ export function InstitutionHeader() {
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              className="flex items-center gap-2 border border-input rounded-full px-1 py-0.5 outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-colors"
             >
               <Avatar>
                 <AvatarImage src={user?.user_metadata?.avatar_url} alt="" />
@@ -51,6 +51,22 @@ export function InstitutionHeader() {
                   {initials}
                 </AvatarFallback>
               </Avatar>
+              <span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="size-4 text-muted-foreground"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </span>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">

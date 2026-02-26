@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useUserProfile } from "@/contexts/user-profile-context";
 import { Header } from "@/components/dashboard/header";
 import { InstitutionHeader } from "@/components/dashboard/institution-header";
@@ -12,10 +14,16 @@ export default function HomeLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
   const { profile } = useUserProfile();
   const role = profile?.role;
 
+  useEffect(() => {
+    if (role === "ADMIN") router.replace("/admin");
+  }, [role, router]);
+
   if (!role) return <Loading />;
+  if (role === "ADMIN") return <Loading />;
 
   const isInstitution = role === "LANDLORD" || role === "FINTECH";
 

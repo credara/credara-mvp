@@ -26,10 +26,16 @@ function NavLinks({
           href={href}
           onClick={onLinkClick}
           className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium hover:bg-muted ${
-            pathname === href ? "bg-muted" : ""
+            pathname === href
+              ? "bg-primary/10 ring ring-primary/20 ring-inset text-foreground"
+              : "text-muted-foreground"
           }`}
         >
-          <Icon className="size-4 shrink-0 text-muted-foreground" />
+          <Icon
+            className={`size-4 shrink-0 ${
+              pathname === href ? "text-primary" : "text-muted-foreground"
+            }`}
+          />
           {label}
         </Link>
       ))}

@@ -14,9 +14,64 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Loader2 } from "lucide-react";
+import {
+  ChevronDown,
+  Loader2,
+  Users,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Building2,
+  Landmark,
+} from "lucide-react";
 
 const PAGE_SIZE = 10;
+
+const statCards = (stats: {
+  total: number;
+  verified: number;
+  rejected: number;
+  pending: number;
+  agents: number;
+  landlords: number;
+  fintechs: number;
+}) => [
+  {
+    label: "Total users",
+    value: stats.total,
+    icon: Users,
+  },
+  {
+    label: "Verified",
+    value: stats.verified,
+    icon: CheckCircle,
+  },
+  {
+    label: "Rejected",
+    value: stats.rejected,
+    icon: XCircle,
+  },
+  {
+    label: "Pending",
+    value: stats.pending,
+    icon: Clock,
+  },
+  {
+    label: "POS Agents",
+    value: stats.agents,
+    icon: Users,
+  },
+  {
+    label: "Landlords",
+    value: stats.landlords,
+    icon: Building2,
+  },
+  {
+    label: "Fintechs",
+    value: stats.fintechs,
+    icon: Landmark,
+  },
+];
 
 export default function AdminDashboardPage() {
   const [page, setPage] = useState(1);
@@ -47,83 +102,39 @@ export default function AdminDashboardPage() {
   });
 
   const pageCount = Math.ceil((usersData?.totalCount ?? 0) / PAGE_SIZE);
+  const cards = stats ? statCards(stats) : [];
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Overview</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Summary and user search
+        </p>
+      </div>
 
       {stats && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-          <Card>
-            <CardHeader className="pb-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Total Users
-              </span>
-            </CardHeader>
-            <CardContent>
-              <span className="text-2xl font-bold">{stats.total}</span>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Verified
-              </span>
-            </CardHeader>
-            <CardContent>
-              <span className="text-2xl font-bold">{stats.verified}</span>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Rejected
-              </span>
-            </CardHeader>
-            <CardContent>
-              <span className="text-2xl font-bold">{stats.rejected}</span>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Pending
-              </span>
-            </CardHeader>
-            <CardContent>
-              <span className="text-2xl font-bold">{stats.pending}</span>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                POS Agents
-              </span>
-            </CardHeader>
-            <CardContent>
-              <span className="text-2xl font-bold">{stats.agents}</span>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Landlords
-              </span>
-            </CardHeader>
-            <CardContent>
-              <span className="text-2xl font-bold">{stats.landlords}</span>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Fintechs
-              </span>
-            </CardHeader>
-            <CardContent>
-              <span className="text-2xl font-bold">{stats.fintechs}</span>
-            </CardContent>
-          </Card>
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+          {cards.map(({ label, value, icon: Icon }) => (
+            <div
+              key={label}
+              className="rounded-xl border border-border/80 bg-muted/30 px-4 py-5 shadow-none"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-3xl font-bold tracking-tight tabular-nums">
+                    {value}
+                  </p>
+                  <p className="mt-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    {label}
+                  </p>
+                </div>
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15">
+                  <Icon className="size-4 text-primary" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -135,7 +146,7 @@ export default function AdminDashboardPage() {
           <div className="flex gap-2">
             <Input
               placeholder="Search by name, email, phone..."
-              className="max-w-sm"
+              className="max-w-xs"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={(e) =>
@@ -144,6 +155,7 @@ export default function AdminDashboardPage() {
             />
             <Button
               variant="secondary"
+              size="sm"
               onClick={() => (setSearch(searchInput), setPage(1))}
             >
               Search
