@@ -4,9 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUserProfile } from "@/contexts/user-profile-context";
 import { Header } from "@/components/dashboard/header";
-import { InstitutionHeader } from "@/components/dashboard/institution-header";
-import { InstitutionLayout } from "./institution-layout";
-import { InstitutionSidebarProvider } from "./institution-sidebar-context";
+import { InstitutionShell } from "./institution-shell";
 import Loading from "../loading";
 
 export default function HomeLayout({
@@ -28,14 +26,7 @@ export default function HomeLayout({
   const isInstitution = role === "LANDLORD" || role === "FINTECH";
 
   if (isInstitution) {
-    return (
-      <InstitutionSidebarProvider>
-        <div className="fixed inset-0 flex flex-col overflow-hidden bg-background">
-          <InstitutionHeader />
-          <InstitutionLayout>{children}</InstitutionLayout>
-        </div>
-      </InstitutionSidebarProvider>
-    );
+    return <InstitutionShell>{children}</InstitutionShell>;
   }
 
   return (

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, CreditCard } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { useInstitutionSidebar } from "./institution-sidebar-context";
 
 const navItems = [
   { href: "/home", label: "Overview", icon: LayoutDashboard },
@@ -43,20 +42,30 @@ function NavLinks({
   );
 }
 
-export function InstitutionLayout({ children }: { children: React.ReactNode }) {
+export function InstitutionLayout({
+  children,
+  open,
+  onOpenChange,
+}: {
+  children: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const pathname = usePathname();
-  const { open, setOpen } = useInstitutionSidebar();
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
       <aside className="hidden md:flex w-56 shrink-0 flex-col gap-1 p-4">
         <NavLinks pathname={pathname} />
       </aside>
-      <Sheet open={open} onOpenChange={setOpen}>
+      <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent side="left" className="w-56 p-0 pt-12">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <nav className="flex flex-col gap-1 p-4">
-            <NavLinks pathname={pathname} onLinkClick={() => setOpen(false)} />
+            <NavLinks
+              pathname={pathname}
+              onLinkClick={() => onOpenChange(false)}
+            />
           </nav>
         </SheetContent>
       </Sheet>

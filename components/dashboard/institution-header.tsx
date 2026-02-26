@@ -1,7 +1,6 @@
 "use client";
 
 import { useAuth } from "@/contexts/auth-context";
-import { useInstitutionSidebar } from "@/app/home/institution-sidebar-context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -14,9 +13,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { LogOut, Menu } from "lucide-react";
 
-export function InstitutionHeader() {
+export function InstitutionHeader({
+  onOpenSidebar,
+}: {
+  onOpenSidebar: () => void;
+}) {
   const { user, signOut } = useAuth();
-  const { setOpen } = useInstitutionSidebar();
   const email = user?.email ?? "";
   const initials = email ? email.slice(0, 2).toUpperCase() : "?";
 
@@ -28,7 +30,7 @@ export function InstitutionHeader() {
             variant="ghost"
             size="icon"
             className="shrink-0 md:hidden block"
-            onClick={() => setOpen(true)}
+            onClick={onOpenSidebar}
             aria-label="Open menu"
           >
             <Menu className="size-5" />

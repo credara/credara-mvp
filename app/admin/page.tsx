@@ -5,7 +5,6 @@ import { useState } from "react";
 import { getAdminStats, getAdminUsers } from "@/app/actions/admin";
 import { DataTable } from "@/components/admin/data-table";
 import { usersColumns } from "./users/columns";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
@@ -14,66 +13,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import {
-  ChevronDown,
-  Loader2,
-  Users,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Building2,
-  Landmark,
-} from "lucide-react";
+import { ChevronDown, Loader2, Users, Info, Filter } from "lucide-react";
+import { useUserProfile } from "@/contexts/user-profile-context";
 
 const PAGE_SIZE = 10;
 
-const statCards = (stats: {
-  total: number;
-  verified: number;
-  rejected: number;
-  pending: number;
-  agents: number;
-  landlords: number;
-  fintechs: number;
-}) => [
-  {
-    label: "Total users",
-    value: stats.total,
-    icon: Users,
-  },
-  {
-    label: "Verified",
-    value: stats.verified,
-    icon: CheckCircle,
-  },
-  {
-    label: "Rejected",
-    value: stats.rejected,
-    icon: XCircle,
-  },
-  {
-    label: "Pending",
-    value: stats.pending,
-    icon: Clock,
-  },
-  {
-    label: "POS Agents",
-    value: stats.agents,
-    icon: Users,
-  },
-  {
-    label: "Landlords",
-    value: stats.landlords,
-    icon: Building2,
-  },
-  {
-    label: "Fintechs",
-    value: stats.fintechs,
-    icon: Landmark,
-  },
-];
-
 export default function AdminDashboardPage() {
+  const { profile } = useUserProfile();
+  const displayName = profile?.fullName?.trim() || profile?.email || "Admin";
   const [page, setPage] = useState(1);
   const [roleFilter, setRoleFilter] = useState<
     "INDIVIDUAL" | "LANDLORD" | "FINTECH" | undefined
@@ -102,39 +49,101 @@ export default function AdminDashboardPage() {
   });
 
   const pageCount = Math.ceil((usersData?.totalCount ?? 0) / PAGE_SIZE);
-  const cards = stats ? statCards(stats) : [];
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Overview</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Summary and user search
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Welcome, {displayName}
+        </h1>
       </div>
 
       {stats && (
-        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
-          {cards.map(({ label, value, icon: Icon }) => (
-            <div
-              key={label}
-              className="rounded-xl border border-border/80 bg-muted/30 px-4 py-5 shadow-none"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-3xl font-bold tracking-tight tabular-nums">
-                    {value}
-                  </p>
-                  <p className="mt-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    {label}
-                  </p>
-                </div>
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15">
-                  <Icon className="size-4 text-primary" />
-                </div>
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+          <div className="rounded-xl border bg-card px-5 py-5 shadow-sm">
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Total users
+              </p>
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/15">
+                <Users className="size-5 text-primary" />
               </div>
             </div>
-          ))}
+            <p className="mt-4 text-3xl font-bold tracking-tight tabular-nums">
+              {stats.total}
+            </p>
+          </div>
+
+          <div className="rounded-xl border bg-card px-5 py-5 shadow-sm">
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Verification status
+              </p>
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted">
+                <Info className="size-4 text-muted-foreground" />
+              </div>
+            </div>
+            <div className="mt-4 flex flex-row gap-6 sm:gap-8">
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-2xl font-bold tabular-nums">
+                  {stats.verified}
+                </span>
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="size-2 rounded-full bg-emerald-500" />
+                  Verified
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-2xl font-bold tabular-nums">
+                  {stats.pending}
+                </span>
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="size-2 rounded-full bg-amber-500" />
+                  Pending
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-2xl font-bold tabular-nums">
+                  {stats.rejected}
+                </span>
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="size-2 rounded-full bg-red-500" />
+                  Rejected
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border bg-card px-5 py-5 shadow-sm">
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                User roles
+              </p>
+              <Filter className="size-4 shrink-0 text-muted-foreground" />
+            </div>
+            <div className="mt-4 flex flex-row gap-6 sm:gap-8">
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-2xl font-bold tabular-nums">
+                  {stats.agents}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  POS Agents
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-2xl font-bold tabular-nums">
+                  {stats.landlords}
+                </span>
+                <span className="text-xs text-muted-foreground">Landlords</span>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-2xl font-bold tabular-nums">
+                  {stats.fintechs}
+                </span>
+                <span className="text-xs text-muted-foreground">Fintechs</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
