@@ -6,8 +6,11 @@ import FooterSection from "@/components/hero/footer-section";
 import FAQSection from "@/components/hero/faq-section";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function LandingPage() {
+  const { user } = useAuth();
+
   return (
     <div className="w-full min-h-screen relative bg-primary-foreground overflow-x-hidden flex flex-col justify-start items-center">
       <div className="relative flex flex-col justify-start items-center max-w-none px-4 sm:px-6 md:px-8 lg:px-0 lg:max-w-[1060px] lg:w-[1060px] border-x border-double w-full">
@@ -34,17 +37,31 @@ export default function LandingPage() {
                     />
                   </div>
                 </div>
-                <Link
-                  href="/login"
-                  className="h-6 sm:h-7 cursor-pointer md:h-8 flex justify-start items-center gap-2 sm:gap-3"
-                >
-                  <Button
-                    variant="outline"
-                    className="text-secondary bg-white shadow-[0px_1px_2px_rgba(55,50,47,0.12)] rounded-full text-xs md:text-[13px] font-medium leading-5 font-sans"
+                {user ? (
+                  <Link
+                    href="/home"
+                    className="h-6 sm:h-7 cursor-pointer md:h-8 flex justify-start items-center gap-2 sm:gap-3"
                   >
-                    Log in
-                  </Button>
-                </Link>
+                    <Button
+                      variant="outline"
+                      className="text-secondary bg-white shadow-[0px_1px_2px_rgba(55,50,47,0.12)] rounded-full text-xs md:text-[13px] font-medium leading-5 font-sans"
+                    >
+                      Dashboard
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="h-6 sm:h-7 cursor-pointer md:h-8 flex justify-start items-center gap-2 sm:gap-3"
+                  >
+                    <Button
+                      variant="outline"
+                      className="text-secondary bg-white shadow-[0px_1px_2px_rgba(55,50,47,0.12)] rounded-full text-xs md:text-[13px] font-medium leading-5 font-sans"
+                    >
+                      Log in
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
 
@@ -65,8 +82,11 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <Button className="max-w-lg mt-6 sm:mt-8 md:mt-10 lg:mt-12 h-10 sm:h-11 md:h-12 px-6 sm:px-8 md:px-10 lg:px-12 py-2 sm:py-[6px] relative bg-primary shadow-[0px_0px_0px_2.5px_rgba(255,255,255,0.08)_inset] overflow-hidden rounded-full flex justify-center items-center text-white text-sm sm:text-base md:text-[15px] font-medium leading-5 font-sans backdrop-blur-[8.25px] z-10">
-                Start for free
+              <Button
+                asChild
+                className="max-w-lg mt-6 sm:mt-8 md:mt-10 lg:mt-12 h-10 sm:h-11 md:h-12 px-6 sm:px-8 md:px-10 lg:px-12 py-2 sm:py-[6px] relative bg-primary shadow-[0px_0px_0px_2.5px_rgba(255,255,255,0.08)_inset] overflow-hidden rounded-full flex justify-center items-center text-white text-sm sm:text-base md:text-[15px] font-medium leading-5 font-sans backdrop-blur-[8.25px] z-10"
+              >
+                <Link href={user ? "/home" : "/signup"}>Start for free</Link>
               </Button>
 
               <div className="absolute top-[232px] sm:top-[248px] md:top-[264px] lg:top-[320px] left-1/2 transform -translate-x-1/2 z-0 pointer-events-none">

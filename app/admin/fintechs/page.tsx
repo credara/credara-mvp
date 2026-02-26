@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getAdminUsers } from "@/app/actions/admin";
 import { DataTable } from "@/components/admin/data-table";
+import { TableSkeleton } from "@/components/admin/table-skeleton";
 import { usersColumns } from "../users/columns";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
 
 const PAGE_SIZE = 10;
 
@@ -50,9 +50,7 @@ export default function AdminFintechsPage() {
         </Button>
       </div>
       {isLoading ? (
-        <div className="py-8 text-center text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" />
-        </div>
+        <TableSkeleton columnCount={6} rowCount={10} />
       ) : (
         <DataTable
           columns={usersColumns}

@@ -1,9 +1,14 @@
+"use client";
+
+import Link from "next/link";
 import { Button } from "../ui/button";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function CTASection() {
+  const { user } = useAuth();
+
   return (
     <div className="w-full relative overflow-hidden flex flex-col justify-center items-center gap-2">
-      {/* Content */}
       <div className="self-stretch px-6 md:px-24 py-12 md:py-12 border-t border-b border-[rgba(55,50,47,0.12)] flex justify-center items-center gap-6 relative z-10">
         <div className="absolute inset-0 w-full h-full overflow-hidden">
           <div className="w-full h-full relative">
@@ -33,14 +38,19 @@ export default function CTASection() {
             </div>
           </div>
           <div className="w-full max-w-[497px] flex flex-col justify-center items-center gap-12">
-            <Button className="h-10 px-12 py-[6px] relative bg-primary shadow-[0px_0px_0px_2.5px_rgba(255,255,255,0.08)_inset overflow-hidden rounded-full flex justify-center items-center cursor-pointer transition-colors">
-              <span
-                className="w-44 h-[41px] absolute left-0 top-0 bg-linear-to-b from-[rgba(255,255,255,0)] to-[rgba(0,0,0,0.10)] mix-blend-multiply pointer-events-none"
-                aria-hidden="true"
-              ></span>
-              <span className="flex flex-col justify-center text-primary-foreground text-[13px] font-medium leading-5 font-sans relative z-10">
-                Start for free
-              </span>
+            <Button
+              asChild
+              className="h-10 px-12 py-[6px] relative bg-primary shadow-[0px_0px_0px_2.5px_rgba(255,255,255,0.08)_inset overflow-hidden rounded-full flex justify-center items-center cursor-pointer transition-colors"
+            >
+              <Link href={user ? "/home" : "/signup"}>
+                <span
+                  className="w-44 h-[41px] absolute left-0 top-0 bg-linear-to-b from-[rgba(255,255,255,0)] to-[rgba(0,0,0,0.10)] mix-blend-multiply pointer-events-none"
+                  aria-hidden="true"
+                />
+                <span className="flex flex-col justify-center text-primary-foreground text-[13px] font-medium leading-5 font-sans relative z-10">
+                  {user ? "Go to dashboard" : "Start for free"}
+                </span>
+              </Link>
             </Button>
           </div>
         </div>

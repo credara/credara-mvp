@@ -8,6 +8,7 @@ import { usersColumns } from "../users/columns";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { TableSkeleton } from "@/components/admin/table-skeleton";
 
 const PAGE_SIZE = 10;
 
@@ -50,9 +51,7 @@ export default function AdminLandlordsPage() {
         </Button>
       </div>
       {isLoading ? (
-        <div className="py-8 text-center text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" />
-        </div>
+        <TableSkeleton columnCount={6} rowCount={10} />
       ) : (
         <DataTable
           columns={usersColumns}

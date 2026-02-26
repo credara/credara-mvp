@@ -11,8 +11,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <AdminHeader onOpenSidebar={() => setSidebarOpen(true)} />
       <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
         <AdminSidebar open={sidebarOpen} onOpenChange={setSidebarOpen} />
-        <main className="flex-1 min-w-0 overflow-auto border border-border flex justify-center p-4 md:p-6">
-          <div className="w-full max-w-4xl pb-10">{children}</div>
+        <main className="flex-1 min-w-0 overflow-auto border border-border py-4 md:py-6">
+          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 pb-10">
+            {children}
+          </div>
         </main>
       </div>
     </div>
