@@ -4,12 +4,19 @@ import { ColumnDef } from "@tanstack/react-table";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Users, Building2, Landmark } from "lucide-react";
 import type { Profile } from "@/lib/db/schema";
 
 const roleLabels: Record<string, string> = {
   INDIVIDUAL: "POS Agent",
   LANDLORD: "Landlord",
   FINTECH: "Fintech",
+};
+
+const roleIcons: Record<string, typeof Users> = {
+  INDIVIDUAL: Users,
+  LANDLORD: Building2,
+  FINTECH: Landmark,
 };
 
 const statusLabels: Record<string, string> = {
@@ -19,7 +26,10 @@ const statusLabels: Record<string, string> = {
   REJECTED: "Rejected",
 };
 
-const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+const statusVariants: Record<
+  string,
+  "default" | "secondary" | "destructive" | "outline"
+> = {
   NOT_STARTED: "secondary",
   IN_PROGRESS: "outline",
   VERIFIED: "default",
@@ -53,9 +63,7 @@ export const usersColumns: ColumnDef<Profile>[] = [
     accessorKey: "email",
     header: "Email",
     cell: ({ row }) => (
-      <span className="text-muted-foreground">
-        {row.original.email ?? "—"}
-      </span>
+      <span className="text-muted-foreground">{row.original.email ?? "—"}</span>
     ),
   },
   {
@@ -65,23 +73,32 @@ export const usersColumns: ColumnDef<Profile>[] = [
   },
   {
     accessorKey: "role",
-    header: "Role",
-    cell: ({ row }) => (
-      <Badge variant="outline">
-        {roleLabels[row.original.role] ?? row.original.role}
-      </Badge>
-    ),
+    header: () => <div className="text-right">Role</div>,
+    cell: ({ row }) => {
+      const role = row.original.role;
+      const Icon = roleIcons[role];
+      return (
+        <div className="flex items-center justify-end gap-2">
+          <Badge variant="outline" className="gap-1.5 font-normal">
+            {Icon && <Icon className="size-3.5 shrink-0" />}
+            {roleLabels[role] ?? role}
+          </Badge>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "verificationStatus",
-    header: "Status",
+    header: () => <div className="text-right">Status</div>,
     cell: ({ row }) => {
       const status = row.original.verificationStatus;
-      if (!status) return "—";
+      if (!status) return <div className="text-right">—</div>;
       return (
-        <Badge variant={statusVariants[status] ?? "secondary"}>
-          {statusLabels[status] ?? status}
-        </Badge>
+        <div className="flex justify-end">
+          <Badge variant={statusVariants[status] ?? "secondary"}>
+            {statusLabels[status] ?? status}
+          </Badge>
+        </div>
       );
     },
   },

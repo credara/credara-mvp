@@ -20,7 +20,7 @@ export async function GET(request: Request) {
           .select("id")
           .eq("id", user.id)
           .maybeSingle();
-        if (!profile) {
+        if (!profile && next === "/") {
           return NextResponse.redirect(`${origin}/onboarding`);
         }
       }

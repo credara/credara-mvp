@@ -83,12 +83,11 @@ export function TrustReportForm({
       ?.conflictingRefsOrIdentity ?? "") as ConflictingSignal | "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const buildContent = (): TrustReportContent => {
     const refs = references.filter(
       (r) => r.type.trim() !== "" || r.status !== "Not provided"
     );
-    const content: TrustReportContent = {
+    return {
       identity: {
         ...(identity.nameMatch && { nameMatch: identity.nameMatch }),
         ...(identity.phoneAge && { phoneAge: identity.phoneAge }),
@@ -119,7 +118,46 @@ export function TrustReportForm({
         }),
       },
     };
-    onSubmit(content);
+  };
+
+  const hasChanges = React.useMemo(() => {
+    const current = buildContent();
+    const refsA = current.references ?? [];
+    const refsB = initialContent.references ?? [];
+    if (refsA.length !== refsB.length) return true;
+    const sameRefs = refsA.every(
+      (r, i) =>
+        refsB[i] &&
+        r.type === refsB[i].type &&
+        r.status === (refsB[i] as TrustReportReference).status
+    );
+    if (!sameRefs) return true;
+    return (
+      JSON.stringify({
+        identity: current.identity ?? {},
+        address: current.address ?? {},
+        economicActivity: current.economicActivity ?? {},
+        riskSignals: current.riskSignals ?? {},
+      }) !==
+      JSON.stringify({
+        identity: initialContent.identity ?? {},
+        address: initialContent.address ?? {},
+        economicActivity: initialContent.economicActivity ?? {},
+        riskSignals: initialContent.riskSignals ?? {},
+      })
+    );
+  }, [
+    identity,
+    address,
+    economic,
+    references,
+    riskSignals,
+    initialContent,
+  ]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(buildContent());
   };
 
   const addReference = () =>
@@ -457,7 +495,7 @@ export function TrustReportForm({
         </div>
       </section>
 
-      <Button type="submit" disabled={isPending}>
+      <Button type="submit" disabled={isPending || !hasChanges}>
         Save trust report
       </Button>
     </form>

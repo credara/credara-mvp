@@ -9,13 +9,15 @@ import {
   unlockReport,
 } from "@/app/actions/institution";
 import { DataTable } from "@/components/admin/data-table";
+import { TableSkeleton } from "@/components/admin/table-skeleton";
 import { unlockedReportsColumns } from "./unlocked-reports-columns";
 import { TrustScoreChart } from "@/components/dashboard/trust-score-chart";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { FileText, Loader2, Shield } from "lucide-react";
+import { FileText, Shield } from "lucide-react";
+import Link from "next/link";
 
 const REPORTS_PAGE_SIZE = 10;
 
@@ -89,13 +91,6 @@ export function InstitutionDashboard({
         <h1 className="text-2xl font-semibold tracking-tight">
           Welcome, {displayName}
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {isLandlord
-            ? `Credits balance: ${profile.creditBalance ?? 0}`
-            : `Subscription: ${profile.subscriptionStatus ?? "—"}${
-                profile.subscriptionPlan ? ` – ${profile.subscriptionPlan}` : ""
-              }`}
-        </p>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="shadow-none">
@@ -110,22 +105,6 @@ export function InstitutionDashboard({
           <CardContent>
             <span className="text-2xl font-bold">
               {profile.totalReportsUnlocked ?? 0}
-            </span>
-          </CardContent>
-        </Card>
-        <Card className="shadow-none">
-          <CardHeader className="pb-2 flex flex-row items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-md bg-primary/20">
-              <Shield className="size-4 text-primary" />
-            </div>
-            <span className="text-sm font-medium text-muted-foreground">
-              Risk overview
-            </span>
-          </CardHeader>
-          <CardContent>
-            <span className="text-muted-foreground text-sm">
-              Average score of viewed users will appear here once you unlock
-              reports.
             </span>
           </CardContent>
         </Card>
@@ -190,14 +169,16 @@ export function InstitutionDashboard({
         )}
       </section>
 
-      <section>
+      <section id="unlocked-reports">
         <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Unlocked reports
         </h2>
         {reportsLoading ? (
-          <div className="py-8 text-center text-muted-foreground text-sm">
-            <Loader2 className="size-4 animate-spin" />
-          </div>
+          <TableSkeleton
+            columnCount={6}
+            rowCount={REPORTS_PAGE_SIZE}
+            showPagination
+          />
         ) : (
           <DataTable
             columns={unlockedReportsColumns}

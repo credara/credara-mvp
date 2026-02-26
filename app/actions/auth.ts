@@ -6,6 +6,7 @@ import {
   loginSchema,
   signUpSchema,
   forgotPasswordSchema,
+  resetPasswordSchema,
 } from "@/app/(auth)/schema";
 
 export type LoginFormState = {
@@ -17,6 +18,10 @@ export type SignUpFormState = {
   errors?: Record<string, string>;
 };
 export type ForgotPasswordFormState = {
+  error?: string;
+  errors?: Record<string, string>;
+};
+export type ResetPasswordFormState = {
   error?: string;
   errors?: Record<string, string>;
 };
@@ -54,8 +59,18 @@ export async function signIn(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { data: authData, error } = await supabase.auth.signInWithPassword(
+    parsed.data
+  );
   if (error) return { error: error.message };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", authData.user.id)
+    .maybeSingle();
+
+  if (profile?.role === "ADMIN") redirect("/admin");
   redirect("/home");
 }
 
@@ -80,6 +95,7 @@ export async function signUp(
     return { errors };
   }
 
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const supabase = await createClient();
   const { error } = await supabase.auth.signUp({
     email: parsed.data.email,
@@ -88,6 +104,7 @@ export async function signUp(
       data: {
         full_name: parsed.data.fullName,
       },
+      emailRedirectTo: `${baseUrl}/api/auth/callback?next=/confirmed`,
     },
   });
   if (error) return { error: error.message };
@@ -133,29 +150,41 @@ export async function resetPassword(
     return { errors };
   }
 
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   const supabase = await createClient();
   const { error } = await supabase.auth.resetPasswordForEmail(
     parsed.data.email,
     {
-      redirectTo: `${
-        process.env.NEXT_PUBLIC_SITE_URL || ""
-      }/auth/reset-password`,
+      redirectTo: `${baseUrl}/api/auth/callback?next=/reset-password`,
     }
   );
   if (error) return { error: error.message };
   return { message: "Check your email for the reset link" };
 }
 
-export async function updatePassword(formData: FormData) {
-  const supabase = await createClient();
-
-  const password = formData.get("password") as string;
-
-  const { error } = await supabase.auth.updateUser({ password });
-
-  if (error) {
-    return { error: error.message };
+export async function updatePassword(
+  prev: ResetPasswordFormState,
+  formData: FormData
+): Promise<ResetPasswordFormState> {
+  const raw = {
+    password: formData.get("password") as string,
+    confirmPassword: formData.get("confirmPassword") as string,
+  };
+  const parsed = resetPasswordSchema.safeParse(raw);
+  if (!parsed.success) {
+    const errors: Record<string, string> = {};
+    parsed.error.flatten().fieldErrors &&
+      Object.entries(parsed.error.flatten().fieldErrors).forEach(([k, v]) => {
+        if (v?.[0]) errors[k] = v[0];
+      });
+    return { errors };
   }
 
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({
+    password: parsed.data.password,
+  });
+
+  if (error) return { error: error.message };
   redirect("/login?updated=password");
 }

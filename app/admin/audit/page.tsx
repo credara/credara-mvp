@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getAdminAuditLogs } from "@/app/actions/admin";
 import { DataTable } from "@/components/admin/data-table";
+import { TableSkeleton } from "@/components/admin/table-skeleton";
 import { auditColumns } from "./columns";
-import { Loader2 } from "lucide-react";
 
 const PAGE_SIZE = 20;
 
@@ -27,9 +27,7 @@ export default function AdminAuditPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Audit Logs</h1>
       {isLoading ? (
-        <div className="py-8 text-center text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" />
-        </div>
+        <TableSkeleton columnCount={5} rowCount={20} />
       ) : (
         <DataTable
           columns={auditColumns}

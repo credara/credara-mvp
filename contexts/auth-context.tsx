@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
+import { signOut as signOutServer } from "@/app/actions/auth";
 
 const AUTH_USER_QUERY_KEY = ["auth", "user"] as const;
 
@@ -43,8 +44,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabase, queryClient]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
     queryClient.invalidateQueries({ queryKey: AUTH_USER_QUERY_KEY });
+    await signOutServer();
   };
 
   return (
