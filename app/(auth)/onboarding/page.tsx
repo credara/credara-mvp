@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +44,7 @@ function SubmitButton() {
 
 export default function OnboardingPage() {
   const [formValues, setFormValues] = useState(initialFormValues);
-  const [state, formAction] = useFormState<OnboardingFormState, FormData>(
+  const [state, formAction] = useActionState<OnboardingFormState, FormData>(
     completeOnboarding,
     {}
   );

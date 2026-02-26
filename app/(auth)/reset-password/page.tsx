@@ -1,6 +1,8 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useState } from "react";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +11,7 @@ import {
   updatePassword,
   type ResetPasswordFormState,
 } from "@/app/actions/auth";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -24,7 +27,9 @@ function SubmitButton() {
 }
 
 export default function ResetPasswordPage() {
-  const [state, formAction] = useFormState<ResetPasswordFormState, FormData>(
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [state, formAction] = useActionState<ResetPasswordFormState, FormData>(
     updatePassword,
     {}
   );
@@ -58,16 +63,31 @@ export default function ResetPasswordPage() {
               <Label htmlFor="password" className="text-[#37322F] font-medium">
                 New password
               </Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="••••••••"
-                autoComplete="new-password"
-                required
-                minLength={8}
-                className="border-[rgba(55,50,47,0.12)] bg-white text-[#37322F] placeholder-[#9B9592]"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  required
+                  minLength={8}
+                  className="border-[rgba(55,50,47,0.12)] bg-white text-[#37322F] placeholder-[#9B9592] pr-10"
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowPassword((p) => !p)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9B9592] hover:text-[#37322F]"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOffIcon className="size-4" />
+                  ) : (
+                    <EyeIcon className="size-4" />
+                  )}
+                </button>
+              </div>
               {state?.errors?.password && (
                 <p className="text-red-600 text-sm">{state.errors.password}</p>
               )}
@@ -80,16 +100,33 @@ export default function ResetPasswordPage() {
               >
                 Confirm password
               </Label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                placeholder="••••••••"
-                autoComplete="new-password"
-                required
-                minLength={8}
-                className="border-[rgba(55,50,47,0.12)] bg-white text-[#37322F] placeholder-[#9B9592]"
-              />
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  required
+                  minLength={8}
+                  className="border-[rgba(55,50,47,0.12)] bg-white text-[#37322F] placeholder-[#9B9592] pr-10"
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowConfirmPassword((p) => !p)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9B9592] hover:text-[#37322F]"
+                  aria-label={
+                    showConfirmPassword ? "Hide password" : "Show password"
+                  }
+                >
+                  {showConfirmPassword ? (
+                    <EyeOffIcon className="size-4" />
+                  ) : (
+                    <EyeIcon className="size-4" />
+                  )}
+                </button>
+              </div>
               {state?.errors?.confirmPassword && (
                 <p className="text-red-600 text-sm">
                   {state.errors.confirmPassword}

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,7 +38,7 @@ export default function SignupPage() {
   const [formValues, setFormValues] = useState(initialFormValues);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [state, formAction] = useFormState<SignUpFormState, FormData>(
+  const [state, formAction] = useActionState<SignUpFormState, FormData>(
     signUp,
     {}
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/contexts/auth-context";
+import { useUserProfile } from "@/contexts/user-profile-context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -11,7 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { LogOut, Menu } from "lucide-react";
+import { LogOut, Menu, Copy } from "lucide-react";
+import { toast } from "sonner";
 
 export function InstitutionHeader({
   onOpenSidebar,
@@ -19,8 +21,16 @@ export function InstitutionHeader({
   onOpenSidebar: () => void;
 }) {
   const { user, signOut } = useAuth();
+  const { profile } = useUserProfile();
   const email = user?.email ?? "";
   const initials = email ? email.slice(0, 2).toUpperCase() : "?";
+  const credaraId = profile?.credaraId ?? null;
+
+  const copyCredaraId = () => {
+    if (!credaraId) return;
+    navigator.clipboard.writeText(credaraId);
+    toast.success("Credara ID copied");
+  };
 
   return (
     <header className="flex h-14 shrink-0 w-full items-center bg-background px-4 md:px-6">
@@ -77,6 +87,28 @@ export function InstitutionHeader({
                 <DropdownMenuLabel className="font-normal truncate">
                   {email}
                 </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+              </>
+            )}
+            {credaraId && (
+              <>
+                <DropdownMenuItem
+                  className="flex flex-col items-stretch gap-0.5 py-2 cursor-pointer"
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    copyCredaraId();
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-muted-foreground text-xs">
+                      Credara ID
+                    </span>
+                    <Copy className="size-3.5 shrink-0" />
+                  </div>
+                  <span className="font-mono text-xs truncate">
+                    {credaraId}
+                  </span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
               </>
             )}
