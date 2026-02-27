@@ -54,6 +54,9 @@ export function InstitutionDashboard({
         queryClient.invalidateQueries({
           queryKey: ["institution", "lookup", search],
         });
+        queryClient.invalidateQueries({
+          queryKey: ["userProfile"],
+        });
         toast.success("Report unlocked");
         router.push(`/home/reports/${targetProfileId}`);
       } else {
@@ -139,29 +142,43 @@ export function InstitutionDashboard({
               <p className="text-muted-foreground">Searching...</p>
             ) : lookupResults?.length ? (
               <ul className="space-y-4">
-                {lookupResults.map((r) => (
-                  <li
-                    key={r.id}
-                    className="flex flex-wrap items-center gap-4 rounded-md border p-3 last:border-b"
-                  >
-                    <div className="min-w-[100px]">
-                      <TrustScoreChart score={r.trustScore ?? 0} compact />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium">{r.fullName ?? "—"}</p>
-                      <p className="text-muted-foreground text-xs font-mono">
-                        {r.credaraId ?? "—"}
-                      </p>
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={() => unlockMutation.mutate(r.id)}
-                      disabled={unlockMutation.isPending}
+                {lookupResults.map((r) => {
+                  const alreadyUnlocked = r.hasUnlocked;
+
+                  return (
+                    <li
+                      key={r.id}
+                      className="flex flex-wrap items-center gap-4 rounded-md border p-3 last:border-b"
                     >
-                      {isLandlord ? "Unlock (1 credit)" : "Unlock report"}
-                    </Button>
-                  </li>
-                ))}
+                      <div className="min-w-[100px]">
+                        <TrustScoreChart score={r.trustScore ?? 0} compact />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium">{r.fullName ?? "—"}</p>
+                        <p className="text-muted-foreground text-xs font-mono">
+                          {r.credaraId ?? "—"}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          if (alreadyUnlocked) {
+                            router.push(`/home/reports/${r.id}`);
+                            return;
+                          }
+                          unlockMutation.mutate(r.id);
+                        }}
+                        disabled={unlockMutation.isPending}
+                      >
+                        {alreadyUnlocked
+                          ? "View report"
+                          : isLandlord
+                          ? "Unlock (1 credit)"
+                          : "Unlock report"}
+                      </Button>
+                    </li>
+                  );
+                })}
               </ul>
             ) : (
               <p className="text-muted-foreground">No results.</p>

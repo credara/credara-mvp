@@ -16,10 +16,6 @@ export function HomeLayoutClient({ children }: { children: React.ReactNode }) {
     if (role === "ADMIN") router.replace("/admin");
   }, [role, router]);
 
-  useEffect(() => {
-    if (!loading && profile === null) router.replace("/onboarding");
-  }, [loading, profile, router]);
-
   if (!role) return <Loading />;
   if (role === "ADMIN") return <Loading />;
 

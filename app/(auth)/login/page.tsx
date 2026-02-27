@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
@@ -13,6 +14,7 @@ import {
   type LoginFormState,
 } from "@/app/actions/auth";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -28,6 +30,15 @@ function SubmitButton() {
 }
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace("/home");
+    }
+  }, [loading, user, router]);
+
   const [state, formAction] = useActionState<LoginFormState, FormData>(
     signIn,
     {}

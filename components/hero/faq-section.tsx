@@ -71,21 +71,19 @@ export default function FAQSection() {
   };
 
   return (
-    <div className="w-full flex justify-center items-start">
-      <div className="flex-1 px-4 md:px-12 py-16 md:py-20 flex flex-col lg:flex-row justify-start items-start gap-6 lg:gap-12">
-        {/* Left Column - Header */}
+    <section className="w-full border-b border-border bg-background">
+      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20 flex flex-col lg:flex-row justify-start items-start gap-6 lg:gap-12">
         <div className="w-full lg:flex-1 flex flex-col justify-center items-start gap-4 lg:py-5">
-          <div className="w-full flex flex-col justify-center text-[#49423D] font-semibold leading-tight md:leading-[44px] font-sans text-4xl tracking-tight">
+          <h2 className="w-full flex flex-col justify-center text-secondary font-semibold leading-tight md:leading-[44px] font-sans text-4xl tracking-tight">
             Frequently Asked Questions
-          </div>
-          <div className="w-full text-[#605A57] text-base font-normal leading-7 font-sans">
+          </h2>
+          <p className="w-full text-muted-foreground text-base font-normal leading-7 font-sans">
             Learn about Credara's verification process
             <br className="hidden md:block" />
             and how Trust Scores work
-          </div>
+          </p>
         </div>
 
-        {/* Right Column - FAQ Items */}
         <div className="w-full lg:flex-1 flex flex-col justify-center items-center">
           <div className="w-full flex flex-col">
             {faqData.map((item, index) => {
@@ -94,19 +92,19 @@ export default function FAQSection() {
               return (
                 <div
                   key={index}
-                  className="w-full border-b border-[rgba(73,66,61,0.16)] overflow-hidden"
+                  className="w-full border-b border-border overflow-hidden last:border-b-0"
                 >
                   <button
                     onClick={() => toggleItem(index)}
-                    className="w-full px-5 py-[18px] flex justify-between items-center gap-5 text-left hover:bg-[rgba(73,66,61,0.02)] transition-colors duration-200"
+                    className="w-full px-5 py-[18px] flex justify-between items-center gap-5 text-left hover:bg-muted/50 transition-colors duration-200"
                     aria-expanded={isOpen}
                   >
-                    <div className="flex-1 text-[#49423D] text-base font-medium leading-6 font-sans">
+                    <span className="flex-1 text-secondary text-base font-medium leading-6 font-sans">
                       {item.question}
-                    </div>
+                    </span>
                     <div className="flex justify-center items-center">
                       <ChevronDownIcon
-                        className={`w-6 h-6 text-[rgba(73,66,61,0.60)] transition-transform duration-300 ease-in-out ${
+                        className={`w-6 h-6 text-muted-foreground transition-transform duration-300 ease-in-out ${
                           isOpen ? "rotate-180" : "rotate-0"
                         }`}
                       />
@@ -118,7 +116,7 @@ export default function FAQSection() {
                       isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
                     }`}
                   >
-                    <div className="px-5 pb-[18px] text-[#605A57] text-sm font-normal leading-6 font-sans">
+                    <div className="px-5 pb-[18px] text-muted-foreground text-sm font-normal leading-6 font-sans">
                       {item.answer}
                     </div>
                   </div>
@@ -128,6 +126,6 @@ export default function FAQSection() {
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

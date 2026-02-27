@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import {
   resetPassword,
   type ForgotPasswordFormState,
 } from "@/app/actions/auth";
+import { useAuth } from "@/contexts/auth-context";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -25,6 +27,15 @@ function SubmitButton() {
 }
 
 export default function ForgotPasswordPage() {
+  const router = useRouter();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace("/home");
+    }
+  }, [loading, user, router]);
+
   const [state, formAction] = useActionState<
     ForgotPasswordFormState & { message?: string },
     FormData
