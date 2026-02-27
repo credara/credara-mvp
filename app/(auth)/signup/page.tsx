@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
@@ -13,6 +14,7 @@ import {
   type SignUpFormState,
 } from "@/app/actions/auth";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
 
 const initialFormValues = {
   fullName: "",
@@ -35,6 +37,15 @@ function SubmitButton() {
 }
 
 export default function SignupPage() {
+  const router = useRouter();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace("/home");
+    }
+  }, [loading, user, router]);
+
   const [formValues, setFormValues] = useState(initialFormValues);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);

@@ -30,6 +30,7 @@ export function UserProfileProvider({
     queryFn: async () => {
       if (!user?.id) return null;
       const p = await getUserProfile(user.id);
+      if (!p) return null;
       return mapProfileToUser(p as Profile);
     },
     enabled: !!user?.id,

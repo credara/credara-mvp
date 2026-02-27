@@ -9,7 +9,7 @@ import Loading from "../loading";
 
 export function HomeLayoutClient({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { profile } = useUserProfile();
+  const { profile, loading } = useUserProfile();
   const role = profile?.role;
 
   useEffect(() => {

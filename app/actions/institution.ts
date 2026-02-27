@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, and, ilike, or, desc } from "drizzle-orm";
+import { eq, and, ilike, or, desc, inArray } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 import { db, profiles, reportUnlocks } from "@/lib/db";
 import type { TrustReportContent } from "@/lib/types/trust-report";
@@ -29,10 +29,11 @@ export type LookupResult = {
   credaraId: string | null;
   trustScore: number | null;
   riskLevel: string | null;
+  hasUnlocked: boolean;
 };
 
 export async function searchLookup(term: string): Promise<LookupResult[]> {
-  await requireInstitution();
+  const { user } = await requireInstitution();
 
   if (!term?.trim() || term.trim().length < 2) return [];
 
@@ -59,7 +60,28 @@ export async function searchLookup(term: string): Promise<LookupResult[]> {
     )
     .limit(20);
 
-  return rows;
+  if (!rows.length) return [];
+
+  const ids = rows.map((r) => r.id);
+
+  const unlockedRows = await db
+    .select({
+      targetProfileId: reportUnlocks.targetProfileId,
+    })
+    .from(reportUnlocks)
+    .where(
+      and(
+        eq(reportUnlocks.institutionUserId, user.id),
+        inArray(reportUnlocks.targetProfileId, ids)
+      )
+    );
+
+  const unlockedSet = new Set(unlockedRows.map((u) => u.targetProfileId));
+
+  return rows.map((r) => ({
+    ...r,
+    hasUnlocked: unlockedSet.has(r.id),
+  }));
 }
 
 export type UnlockedReportRow = {

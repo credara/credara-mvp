@@ -30,5 +30,10 @@ export default function HomePage() {
     return <InstitutionDashboard profile={p} />;
   }
 
-  return <div>Unknown</div>;
+  return (
+    <div className="py-8 text-center text-muted-foreground">
+      <p>Your account type could not be determined.</p>
+      <p className="mt-2 text-sm">Please contact support if this persists.</p>
+    </div>
+  );
 }

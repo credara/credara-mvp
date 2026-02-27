@@ -3,14 +3,6 @@ import { mapProfileToUser } from "@/lib/types/profile-mapper";
 import type { AnyUser } from "@/lib/types/users";
 import { supabaseRowToProfile } from "./supabase-profile";
 
-export async function getSession() {
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  return session;
-}
-
 export async function getUser() {
   const supabase = await createClient();
   const {

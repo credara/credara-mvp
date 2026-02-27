@@ -100,18 +100,26 @@ export default function IndividualDashboard({
             <div className="flex flex-col sm:flex-row gap-3">
               <Button
                 className="bg-secondary hover:bg-secondary/90 text-white px-6"
-                onClick={() =>
-                  window.open("https://wa.me/2348012345678", "_blank")
-                }
+                onClick={() => {
+                  const phone =
+                    process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP ?? "2348012345678";
+                  window.open(
+                    phone.startsWith("http") ? phone : `https://wa.me/${phone}`,
+                    "_blank"
+                  );
+                }}
               >
                 Chat on WhatsApp
               </Button>
               <Button
                 variant="outline"
                 className="border-[#37322F] text-[#37322F] hover:bg-[#37322F]/5"
-                onClick={() =>
-                  (window.location.href = "mailto:verify@credara.com")
-                }
+                onClick={() => {
+                  const email =
+                    process.env.NEXT_PUBLIC_SUPPORT_EMAIL ??
+                    "verify@credara.com";
+                  window.location.href = `mailto:${email}`;
+                }}
               >
                 Email Us
               </Button>
