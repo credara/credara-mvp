@@ -328,6 +328,7 @@ export async function addCreditsToLandlord(
 
   if (!target || target.role !== "LANDLORD")
     throw new Error("User not found or not a landlord");
+  if (amount <= 0) throw new Error("Amount must be greater than zero");
 
   const newBalance = (target.creditBalance ?? 0) + amount;
   const newTotal = (target.totalCreditsPurchased ?? 0) + amount;

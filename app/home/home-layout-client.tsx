@@ -9,12 +9,16 @@ import Loading from "../loading";
 
 export function HomeLayoutClient({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { profile } = useUserProfile();
+  const { profile, loading } = useUserProfile();
   const role = profile?.role;
 
   useEffect(() => {
     if (role === "ADMIN") router.replace("/admin");
   }, [role, router]);
+
+  useEffect(() => {
+    if (!loading && profile === null) router.replace("/onboarding");
+  }, [loading, profile, router]);
 
   if (!role) return <Loading />;
   if (role === "ADMIN") return <Loading />;

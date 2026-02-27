@@ -73,6 +73,7 @@ export function InstitutionDashboard({
     queryKey: ["institution", "unlocked-reports", reportsPage],
     queryFn: () =>
       getUnlockedReports({ page: reportsPage, pageSize: REPORTS_PAGE_SIZE }),
+    placeholderData: (previousData) => previousData,
   });
 
   const reportsPageCount = Math.ceil(
