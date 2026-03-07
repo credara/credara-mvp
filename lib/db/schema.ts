@@ -12,7 +12,6 @@ import {
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
 
 export const userRoleEnum = pgEnum("user_role", [
-  "INDIVIDUAL",
   "LANDLORD",
   "FINTECH",
   "ADMIN",
@@ -40,6 +39,23 @@ export const adminLevelEnum = pgEnum("admin_level", [
   "SUPPORT",
 ]);
 
+export const individuals = pgTable("individuals", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  phone: varchar("phone", { length: 32 }).notNull(),
+  normalizedPhone: varchar("normalized_phone", { length: 32 }).notNull().unique(),
+  fullName: varchar("full_name", { length: 255 }),
+  email: varchar("email", { length: 255 }),
+  credaraId: varchar("credara_id", { length: 64 }),
+  trustScore: integer("trust_score"),
+  riskLevel: riskLevelEnum("risk_level"),
+  verificationStatus: verificationStatusEnum("verification_status"),
+  lastVerificationDate: timestamp("last_verification_date"),
+  internalNotes: text("internal_notes"),
+  trustReportContent: jsonb("trust_report_content"),
+});
+
 // Profiles table – extends Supabase auth.users
 export const profiles = pgTable("profiles", {
   id: uuid("id").primaryKey(), // links to auth.users.id
@@ -54,12 +70,9 @@ export const profiles = pgTable("profiles", {
   institutionType: varchar("institution_type", { length: 32 }), // LANDLORD | FINTECH
   businessName: varchar("business_name", { length: 255 }),
 
-  // IndividualUser
+  verificationStatus: verificationStatusEnum("verification_status"),
   trustScore: integer("trust_score"),
   riskLevel: riskLevelEnum("risk_level"),
-  verificationStatus: verificationStatusEnum("verification_status"),
-  lastVerificationDate: timestamp("last_verification_date"),
-  internalNotes: text("internal_notes"),
   trustReportContent: jsonb("trust_report_content"),
 
   // InstitutionUser
@@ -106,13 +119,16 @@ export const reportUnlocks = pgTable("report_unlocks", {
   id: uuid("id").primaryKey().defaultRandom(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   institutionUserId: uuid("institution_user_id").notNull(),
-  targetProfileId: uuid("target_profile_id").notNull(),
+  targetProfileId: uuid("target_profile_id"),
+  targetIndividualId: uuid("target_individual_id"),
   targetUserName: varchar("target_user_name", { length: 255 }),
   targetCredaraId: varchar("target_credara_id", { length: 64 }),
   scoreAtUnlock: integer("score_at_unlock"),
   riskLevel: riskLevelEnum("risk_level"),
 });
 
+export type Individual = InferSelectModel<typeof individuals>;
+export type NewIndividual = InferInsertModel<typeof individuals>;
 export type AuditLog = InferSelectModel<typeof auditLogs>;
 export type NewAuditLog = InferInsertModel<typeof auditLogs>;
 export type ReportUnlock = InferSelectModel<typeof reportUnlocks>;

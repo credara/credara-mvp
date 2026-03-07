@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getAdminUsers } from "@/app/actions/admin";
+import { getAdminIndividuals } from "@/app/actions/admin";
 import { DataTable } from "@/components/admin/data-table";
 import { TableSkeleton } from "@/components/admin/table-skeleton";
-import { usersColumns } from "../users/columns";
+import { agentsColumns } from "./columns";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -19,10 +19,9 @@ export default function AdminAgentsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "agents", page, search],
     queryFn: () =>
-      getAdminUsers({
+      getAdminIndividuals({
         page,
         pageSize: PAGE_SIZE,
-        role: "INDIVIDUAL",
         search: search || undefined,
       }),
   });
@@ -53,7 +52,7 @@ export default function AdminAgentsPage() {
         <TableSkeleton columnCount={6} rowCount={10} />
       ) : (
         <DataTable
-          columns={usersColumns}
+          columns={agentsColumns}
           data={data?.data ?? []}
           page={page}
           pageCount={pageCount}

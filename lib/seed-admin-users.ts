@@ -1,24 +1,21 @@
 import { createClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
-import { db, profiles } from "@/lib/db";
+import { db, profiles, individuals } from "@/lib/db";
 import { eq } from "drizzle-orm";
+import { normalizePhone } from "@/lib/phone";
 
 const TEST_PASSWORD = "test-password-1";
 
-type SeedUser =
-  | {
-      email: string;
-      fullName: string;
-      role: "INDIVIDUAL";
-      phone: string;
-      verificationStatus?:
-        | "NOT_STARTED"
-        | "IN_PROGRESS"
-        | "VERIFIED"
-        | "REJECTED";
-      trustScore?: number | null;
-      credaraId: string;
-    }
+type SeedIndividual = {
+  email: string;
+  fullName: string;
+  phone: string;
+  verificationStatus: "NOT_STARTED" | "IN_PROGRESS" | "VERIFIED" | "REJECTED";
+  trustScore?: number | null;
+  credaraId: string;
+};
+
+type SeedProfileUser =
   | {
       email: string;
       fullName: string;
@@ -43,11 +40,10 @@ type SeedUser =
       totalReportsUnlocked?: number;
     };
 
-const seedUsers: SeedUser[] = [
+const seedIndividuals: SeedIndividual[] = [
   {
     email: "individual@test.credara.local",
     fullName: "Test POS Agent",
-    role: "INDIVIDUAL",
     phone: "+15550000001",
     verificationStatus: "VERIFIED",
     trustScore: 75,
@@ -56,12 +52,14 @@ const seedUsers: SeedUser[] = [
   {
     email: "individual-pending@test.credara.local",
     fullName: "Pending Agent",
-    role: "INDIVIDUAL",
     phone: "+15550000002",
     verificationStatus: "IN_PROGRESS",
     trustScore: null,
     credaraId: `crd-${nanoid(10)}`,
   },
+];
+
+const seedProfileUsers: SeedProfileUser[] = [
   {
     email: "landlord@test.credara.local",
     fullName: "Test Landlord",
@@ -87,7 +85,21 @@ const seedUsers: SeedUser[] = [
   },
 ];
 
-async function insertProfile(userId: string, u: SeedUser) {
+async function insertIndividual(u: SeedIndividual) {
+  const normalized = normalizePhone(u.phone);
+  await db.insert(individuals).values({
+    phone: u.phone,
+    normalizedPhone: normalized,
+    fullName: u.fullName,
+    email: u.email,
+    credaraId: u.credaraId,
+    verificationStatus: u.verificationStatus ?? "NOT_STARTED",
+    trustScore: u.trustScore ?? null,
+    updatedAt: new Date(),
+  });
+}
+
+async function insertProfile(userId: string, u: SeedProfileUser) {
   const base = {
     id: userId,
     phone: u.phone,
@@ -96,15 +108,6 @@ async function insertProfile(userId: string, u: SeedUser) {
     credaraId: u.credaraId,
     role: u.role,
   };
-
-  if (u.role === "INDIVIDUAL") {
-    await db.insert(profiles).values({
-      ...base,
-      verificationStatus: u.verificationStatus ?? "NOT_STARTED",
-      trustScore: u.trustScore ?? null,
-    });
-    return;
-  }
 
   if (u.role === "LANDLORD") {
     await db.insert(profiles).values({
@@ -160,7 +163,21 @@ export async function seedAdminTestUsers(): Promise<SeedResult> {
   const skipped: string[] = [];
   const errors: string[] = [];
 
-  for (const u of seedUsers) {
+  for (const u of seedIndividuals) {
+    const [existing] = await db
+      .select({ id: individuals.id })
+      .from(individuals)
+      .where(eq(individuals.normalizedPhone, normalizePhone(u.phone)))
+      .limit(1);
+    if (existing) {
+      skipped.push(u.email);
+      continue;
+    }
+    await insertIndividual(u);
+    created.push(`${u.email} (individual)`);
+  }
+
+  for (const u of seedProfileUsers) {
     const { data: authUser, error: authError } =
       await supabase.auth.admin.createUser({
         email: u.email,

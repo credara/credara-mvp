@@ -15,11 +15,10 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-export const userTypeValues = ["individual", "landlord", "fintech"] as const;
+export const userTypeValues = ["landlord", "fintech"] as const;
 export type UserType = (typeof userTypeValues)[number];
 
 export const userTypeLabels: Record<UserType, string> = {
-  individual: "Individual",
   landlord: "Landlord",
   fintech: "Fintech",
 };

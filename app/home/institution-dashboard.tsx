@@ -45,8 +45,8 @@ export function InstitutionDashboard({
   const [reportsPage, setReportsPage] = useState(1);
 
   const unlockMutation = useMutation({
-    mutationFn: (targetProfileId: string) => unlockReport(targetProfileId),
-    onSuccess: (result, targetProfileId) => {
+    mutationFn: (targetIndividualId: string) => unlockReport(targetIndividualId),
+    onSuccess: (result, targetIndividualId) => {
       if (result.ok) {
         queryClient.invalidateQueries({
           queryKey: ["institution", "unlocked-reports"],
@@ -58,7 +58,7 @@ export function InstitutionDashboard({
           queryKey: ["userProfile"],
         });
         toast.success("Report unlocked");
-        router.push(`/home/reports/${targetProfileId}`);
+        router.push(`/home/reports/${targetIndividualId}`);
       } else {
         toast.error(result.error);
       }

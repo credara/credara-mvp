@@ -96,7 +96,7 @@ export default function AdminDashboardPage() {
   const displayName = profile?.fullName?.trim() || profile?.email || " ";
   const [page, setPage] = useState(1);
   const [roleFilter, setRoleFilter] = useState<
-    "INDIVIDUAL" | "LANDLORD" | "FINTECH" | undefined
+    "LANDLORD" | "FINTECH" | undefined
   >();
   const [statusFilter, setStatusFilter] = useState<
     "NOT_STARTED" | "IN_PROGRESS" | "VERIFIED" | "REJECTED" | undefined
@@ -240,15 +240,6 @@ export default function AdminDashboardPage() {
                   }}
                 >
                   All
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={roleFilter === "INDIVIDUAL"}
-                  onCheckedChange={() => {
-                    setRoleFilter("INDIVIDUAL");
-                    setPage(1);
-                  }}
-                >
-                  POS Agents
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem
                   checked={roleFilter === "LANDLORD"}
