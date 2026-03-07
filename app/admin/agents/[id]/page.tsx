@@ -4,11 +4,11 @@ import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import {
-  getAdminUserById,
-  updateAgentVerification,
-  updateAgentScore,
-  updateAgentInternalNotes,
-  updateAgentTrustReport,
+  getIndividualById,
+  updateIndividualVerification,
+  updateIndividualScore,
+  updateIndividualInternalNotes,
+  updateIndividualTrustReport,
 } from "@/app/actions/admin";
 import { TrustReportForm } from "@/components/admin/trust-report-form";
 import { parseTrustReportContent } from "@/lib/types/trust-report";
@@ -38,33 +38,33 @@ export default function AdminAgentDetailPage({
   const queryClient = useQueryClient();
   const { data: profile, isLoading } = useQuery({
     queryKey: ["admin", "agent", id],
-    queryFn: () => getAdminUserById(id),
+    queryFn: () => getIndividualById(id),
   });
 
   const verifyMutation = useMutation({
     mutationFn: (status: "VERIFIED" | "REJECTED") =>
-      updateAgentVerification(id, status),
+      updateIndividualVerification(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "agent", id] });
       queryClient.invalidateQueries({ queryKey: ["admin", "stats"] });
-      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "agents"] });
       toast.success("Verification status updated");
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
 
   const scoreMutation = useMutation({
-    mutationFn: (trustScore: number) => updateAgentScore(id, trustScore),
+    mutationFn: (trustScore: number) => updateIndividualScore(id, trustScore),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "agent", id] });
-      queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "agents"] });
       toast.success("Score updated");
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
 
   const notesMutation = useMutation({
-    mutationFn: (notes: string) => updateAgentInternalNotes(id, notes),
+    mutationFn: (notes: string) => updateIndividualInternalNotes(id, notes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "agent", id] });
       toast.success("Notes saved");
@@ -73,8 +73,8 @@ export default function AdminAgentDetailPage({
   });
 
   const trustReportMutation = useMutation({
-    mutationFn: (content: Parameters<typeof updateAgentTrustReport>[1]) =>
-      updateAgentTrustReport(id, content),
+    mutationFn: (content: Parameters<typeof updateIndividualTrustReport>[1]) =>
+      updateIndividualTrustReport(id, content),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "agent", id] });
       toast.success("Trust report saved");
@@ -88,16 +88,8 @@ export default function AdminAgentDetailPage({
         {isLoading ? (
           <Loader2 className="size-4 animate-spin" />
         ) : (
-          <span>User not found</span>
+          <span>Individual not found</span>
         )}
-      </div>
-    );
-  }
-
-  if (profile.role !== "INDIVIDUAL") {
-    return (
-      <div className="py-8 text-center text-muted-foreground">
-        Not an individual user
       </div>
     );
   }
@@ -110,6 +102,8 @@ export default function AdminAgentDetailPage({
     void navigator.clipboard.writeText(profile.credaraId);
     toast.success("Copied to clipboard");
   };
+
+  const verificationStatus = profile.verificationStatus ?? "NOT_STARTED";
 
   return (
     <div className="mx-auto max-w-4xl w-full space-y-6 px-4 py-6">
@@ -142,14 +136,14 @@ export default function AdminAgentDetailPage({
             )}
             <Badge
               variant={
-                profile.verificationStatus === "VERIFIED"
+                verificationStatus === "VERIFIED"
                   ? "default"
-                  : profile.verificationStatus === "REJECTED"
+                  : verificationStatus === "REJECTED"
                   ? "destructive"
                   : "secondary"
               }
             >
-              {profile.verificationStatus ?? "—"}
+              {verificationStatus}
             </Badge>
           </div>
         </div>
@@ -159,7 +153,7 @@ export default function AdminAgentDetailPage({
             onClick={() => verifyMutation.mutate("VERIFIED")}
             disabled={
               verifyMutation.isPending ||
-              profile.verificationStatus === "VERIFIED"
+              verificationStatus === "VERIFIED"
             }
           >
             <Check className="mr-2 size-4" />
@@ -170,7 +164,7 @@ export default function AdminAgentDetailPage({
             onClick={() => verifyMutation.mutate("REJECTED")}
             disabled={
               verifyMutation.isPending ||
-              profile.verificationStatus === "REJECTED"
+              verificationStatus === "REJECTED"
             }
           >
             <X className="mr-2 size-4" />
@@ -211,7 +205,7 @@ export default function AdminAgentDetailPage({
           </h2>
           <AgentScoreForm
             key={`score-${profile.trustScore ?? 0}`}
-            currentScore={profile.trustScore}
+            currentScore={profile.trustScore ?? null}
             onSubmit={(trustScore) => scoreMutation.mutate(trustScore)}
             isPending={scoreMutation.isPending}
           />
@@ -224,9 +218,7 @@ export default function AdminAgentDetailPage({
         </h2>
         <TrustReportForm
           key={id}
-          initialContent={parseTrustReportContent(
-            (profile as { trustReportContent?: unknown }).trustReportContent
-          )}
+          initialContent={parseTrustReportContent(profile.trustReportContent)}
           onSubmit={(content) => trustReportMutation.mutate(content)}
           isPending={trustReportMutation.isPending}
         />

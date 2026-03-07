@@ -2,7 +2,7 @@
 
 import { eq, and, or, ne, desc, ilike } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
-import { db, profiles, auditLogs } from "@/lib/db";
+import { db, profiles, auditLogs, individuals } from "@/lib/db";
 import type { TrustReportContent } from "@/lib/types/trust-report";
 
 const ROLE_MAP = {
@@ -40,32 +40,45 @@ export async function getAdminStats() {
 
   const nonAdmin = ne(profiles.role, "ADMIN");
 
-  const [total, verified, rejected, pending, agents, landlords, fintechs] =
-    await Promise.all([
-      db.$count(profiles, nonAdmin),
-      db.$count(
-        profiles,
-        and(nonAdmin, eq(profiles.verificationStatus, "VERIFIED"))
-      ),
-      db.$count(
-        profiles,
-        and(nonAdmin, eq(profiles.verificationStatus, "REJECTED"))
-      ),
-      db.$count(
-        profiles,
-        and(nonAdmin, eq(profiles.verificationStatus, "IN_PROGRESS"))
-      ),
-      db.$count(profiles, eq(profiles.role, "INDIVIDUAL")),
-      db.$count(profiles, eq(profiles.role, "LANDLORD")),
-      db.$count(profiles, eq(profiles.role, "FINTECH")),
-    ]);
+  const [
+    totalProfiles,
+    verifiedProfiles,
+    rejectedProfiles,
+    pendingProfiles,
+    agentsCount,
+    landlords,
+    fintechs,
+    verifiedAgents,
+    rejectedAgents,
+    pendingAgents,
+  ] = await Promise.all([
+    db.$count(profiles, nonAdmin),
+    db.$count(
+      profiles,
+      and(nonAdmin, eq(profiles.verificationStatus, "VERIFIED"))
+    ),
+    db.$count(
+      profiles,
+      and(nonAdmin, eq(profiles.verificationStatus, "REJECTED"))
+    ),
+    db.$count(
+      profiles,
+      and(nonAdmin, eq(profiles.verificationStatus, "IN_PROGRESS"))
+    ),
+    db.$count(individuals),
+    db.$count(profiles, eq(profiles.role, "LANDLORD")),
+    db.$count(profiles, eq(profiles.role, "FINTECH")),
+    db.$count(individuals, eq(individuals.verificationStatus, "VERIFIED")),
+    db.$count(individuals, eq(individuals.verificationStatus, "REJECTED")),
+    db.$count(individuals, eq(individuals.verificationStatus, "IN_PROGRESS")),
+  ]);
 
   return {
-    total,
-    verified,
-    rejected,
-    pending,
-    agents,
+    total: totalProfiles + agentsCount,
+    verified: verifiedProfiles + verifiedAgents,
+    rejected: rejectedProfiles + rejectedAgents,
+    pending: pendingProfiles + pendingAgents,
+    agents: agentsCount,
     landlords,
     fintechs,
   };
@@ -74,7 +87,7 @@ export async function getAdminStats() {
 export type AdminUsersParams = {
   page?: number;
   pageSize?: number;
-  role?: "INDIVIDUAL" | "LANDLORD" | "FINTECH";
+  role?: "LANDLORD" | "FINTECH";
   verificationStatus?: "NOT_STARTED" | "IN_PROGRESS" | "VERIFIED" | "REJECTED";
   search?: string;
 };
@@ -130,33 +143,86 @@ export async function getAdminUserById(id: string) {
   return row ?? null;
 }
 
-export async function updateAgentVerification(
-  userId: string,
+export type AdminIndividualsParams = {
+  page?: number;
+  pageSize?: number;
+  verificationStatus?: "NOT_STARTED" | "IN_PROGRESS" | "VERIFIED" | "REJECTED";
+  search?: string;
+};
+
+export async function getAdminIndividuals(params: AdminIndividualsParams = {}) {
+  await requireAdmin();
+
+  const page = params.page ?? 1;
+  const pageSize = Math.min(params.pageSize ?? 10, 100);
+  const offset = (page - 1) * pageSize;
+
+  const conditions = [];
+  if (params.verificationStatus)
+    conditions.push(eq(individuals.verificationStatus, params.verificationStatus));
+  if (params.search?.trim()) {
+    const term = `%${params.search.trim()}%`;
+    conditions.push(
+      or(
+        ilike(individuals.fullName, term),
+        ilike(individuals.email, term),
+        ilike(individuals.phone, term),
+        ilike(individuals.credaraId, term)
+      )!
+    );
+  }
+
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
+  const baseQuery = where
+    ? db.select().from(individuals).where(where)
+    : db.select().from(individuals);
+
+  const [data, totalCount] = await Promise.all([
+    baseQuery.orderBy(desc(individuals.createdAt)).limit(pageSize).offset(offset),
+    where ? db.$count(individuals, where) : db.$count(individuals),
+  ]);
+
+  return { data, totalCount };
+}
+
+export async function getIndividualById(id: string) {
+  await requireAdmin();
+
+  const [row] = await db
+    .select()
+    .from(individuals)
+    .where(eq(individuals.id, id))
+    .limit(1);
+
+  return row ?? null;
+}
+
+export async function updateIndividualVerification(
+  individualId: string,
   status: "VERIFIED" | "REJECTED"
 ) {
   const { user } = await requireAdmin();
 
   const [target] = await db
     .select()
-    .from(profiles)
-    .where(eq(profiles.id, userId))
+    .from(individuals)
+    .where(eq(individuals.id, individualId))
     .limit(1);
 
-  if (!target || target.role !== "INDIVIDUAL")
-    throw new Error("User not found or not an individual");
+  if (!target) throw new Error("Individual not found");
 
   await db
-    .update(profiles)
+    .update(individuals)
     .set({
       verificationStatus: status,
       lastVerificationDate: new Date(),
       updatedAt: new Date(),
     })
-    .where(eq(profiles.id, userId));
+    .where(eq(individuals.id, individualId));
 
   await db.insert(auditLogs).values({
     adminId: user.id,
-    targetUserId: userId,
+    targetUserId: individualId,
     action:
       status === "VERIFIED" ? "VERIFICATION_APPROVE" : "VERIFICATION_REJECT",
     details: `Status set to ${status}`,
@@ -166,17 +232,19 @@ export async function updateAgentVerification(
 const TRUST_SCORE_MIN = 1;
 const TRUST_SCORE_MAX = 100;
 
-export async function updateAgentScore(userId: string, trustScore: number) {
+export async function updateIndividualScore(
+  individualId: string,
+  trustScore: number
+) {
   const { user } = await requireAdmin();
 
   const [target] = await db
     .select()
-    .from(profiles)
-    .where(eq(profiles.id, userId))
+    .from(individuals)
+    .where(eq(individuals.id, individualId))
     .limit(1);
 
-  if (!target || target.role !== "INDIVIDUAL")
-    throw new Error("User not found or not an individual");
+  if (!target) throw new Error("Individual not found");
 
   const clamped = Math.min(
     TRUST_SCORE_MAX,
@@ -184,85 +252,81 @@ export async function updateAgentScore(userId: string, trustScore: number) {
   );
 
   await db
-    .update(profiles)
+    .update(individuals)
     .set({ trustScore: clamped, updatedAt: new Date() })
-    .where(eq(profiles.id, userId));
+    .where(eq(individuals.id, individualId));
 
   await db.insert(auditLogs).values({
     adminId: user.id,
-    targetUserId: userId,
+    targetUserId: individualId,
     action: "SCORE_OVERRIDE",
     details: `Trust score set to ${clamped}`,
   });
 }
 
-export async function updateAgentProfile(
-  userId: string,
-  data: {
-    fullName?: string;
-    email?: string | null;
-    credaraId?: string;
-  }
+export async function updateIndividualProfile(
+  individualId: string,
+  data: { fullName?: string; email?: string | null; credaraId?: string }
 ) {
   await requireAdmin();
 
   const [target] = await db
     .select()
-    .from(profiles)
-    .where(eq(profiles.id, userId))
+    .from(individuals)
+    .where(eq(individuals.id, individualId))
     .limit(1);
 
-  if (!target || target.role !== "INDIVIDUAL")
-    throw new Error("User not found or not an individual");
+  if (!target) throw new Error("Individual not found");
 
   const updates: Record<string, unknown> = { updatedAt: new Date() };
   if (data.fullName !== undefined) updates.fullName = data.fullName;
   if (data.email !== undefined) updates.email = data.email;
   if (data.credaraId !== undefined) updates.credaraId = data.credaraId;
 
-  await db.update(profiles).set(updates).where(eq(profiles.id, userId));
+  await db.update(individuals).set(updates).where(eq(individuals.id, individualId));
 }
 
-export async function updateAgentInternalNotes(userId: string, notes: string) {
+export async function updateIndividualInternalNotes(
+  individualId: string,
+  notes: string
+) {
   await requireAdmin();
 
   const [target] = await db
     .select()
-    .from(profiles)
-    .where(eq(profiles.id, userId))
+    .from(individuals)
+    .where(eq(individuals.id, individualId))
     .limit(1);
 
-  if (!target || target.role !== "INDIVIDUAL")
-    throw new Error("User not found or not an individual");
+  if (!target) throw new Error("Individual not found");
 
   await db
-    .update(profiles)
+    .update(individuals)
     .set({ internalNotes: notes || null, updatedAt: new Date() })
-    .where(eq(profiles.id, userId));
+    .where(eq(individuals.id, individualId));
 }
 
-export async function updateAgentTrustReport(
-  userId: string,
+export async function updateIndividualTrustReport(
+  individualId: string,
   content: TrustReportContent
 ) {
   await requireAdmin();
 
   const [target] = await db
     .select()
-    .from(profiles)
-    .where(eq(profiles.id, userId))
+    .from(individuals)
+    .where(eq(individuals.id, individualId))
     .limit(1);
 
-  if (!target || target.role !== "INDIVIDUAL")
-    throw new Error("User not found or not an individual");
+  if (!target) throw new Error("Individual not found");
 
   await db
-    .update(profiles)
+    .update(individuals)
     .set({
       trustReportContent: content as unknown as Record<string, unknown>,
       updatedAt: new Date(),
     })
-    .where(eq(profiles.id, userId));
+    .where(eq(individuals.id, individualId));
 }
 
 export async function getAdminAuditLogs(params: {

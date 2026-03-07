@@ -24,7 +24,6 @@ export async function getUserProfile(userId: string) {
 }
 
 const USER_TYPE_TO_ROLE = {
-  individual: "INDIVIDUAL",
   landlord: "LANDLORD",
   fintech: "FINTECH",
 } as const;

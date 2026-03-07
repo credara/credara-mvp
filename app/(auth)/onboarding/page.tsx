@@ -24,7 +24,7 @@ import { toast } from "sonner";
 import { OnboardingFormState } from "@/app/actions/auth";
 
 const initialFormValues = {
-  userType: "individual" as UserType,
+  userType: "landlord" as UserType,
   phone: "",
   businessName: "",
 };

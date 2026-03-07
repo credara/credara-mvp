@@ -4,18 +4,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Landmark } from "lucide-react";
-import type { Profile } from "@/lib/db/schema";
-
-const roleLabels: Record<string, string> = {
-  LANDLORD: "Landlord",
-  FINTECH: "Fintech",
-};
-
-const roleIcons: Record<string, typeof Building2> = {
-  LANDLORD: Building2,
-  FINTECH: Landmark,
-};
+import type { Individual } from "@/lib/db/schema";
 
 const statusLabels: Record<string, string> = {
   NOT_STARTED: "Not Started",
@@ -34,18 +23,7 @@ const statusVariants: Record<
   REJECTED: "destructive",
 };
 
-function getDetailHref(row: Profile) {
-  switch (row.role) {
-    case "LANDLORD":
-      return `/admin/landlords/${row.id}`;
-    case "FINTECH":
-      return `/admin/fintechs/${row.id}`;
-    default:
-      return "#";
-  }
-}
-
-export const usersColumns: ColumnDef<Profile>[] = [
+export const agentsColumns: ColumnDef<Individual>[] = [
   {
     accessorKey: "fullName",
     header: "Name",
@@ -66,22 +44,6 @@ export const usersColumns: ColumnDef<Profile>[] = [
     accessorKey: "phone",
     header: "Phone",
     cell: ({ row }) => row.original.phone,
-  },
-  {
-    accessorKey: "role",
-    header: () => <div className="text-right">Role</div>,
-    cell: ({ row }) => {
-      const role = row.original.role;
-      const Icon = roleIcons[role];
-      return (
-        <div className="flex items-center justify-end gap-2">
-          <Badge variant="outline" className="gap-1.5 font-normal">
-            {Icon && <Icon className="size-3.5 shrink-0" />}
-            {roleLabels[role] ?? role}
-          </Badge>
-        </div>
-      );
-    },
   },
   {
     accessorKey: "verificationStatus",
@@ -107,7 +69,7 @@ export const usersColumns: ColumnDef<Profile>[] = [
   {
     id: "actions",
     cell: ({ row }) => (
-      <Link href={getDetailHref(row.original)}>
+      <Link href={`/admin/agents/${row.original.id}`}>
         <Button variant="ghost" size="sm">
           View
         </Button>

@@ -20,14 +20,43 @@ export default function LandingHeader() {
             className="h-8 w-auto invert"
           />
         </Link>
-        <Button
-          asChild
-          className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-5 font-medium shrink-0"
-        >
-          <Link href={user ? "/home" : "/signup"}>
-            {user ? "Dashboard" : "Get Started"}
-          </Link>
-        </Button>
+        <div className="flex items-center gap-6 shrink-0">
+          {user ? (
+            <Button
+              asChild
+              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-5 font-medium"
+            >
+              <Link href="/home">Dashboard</Link>
+            </Button>
+          ) : (
+            <>
+              <Link
+                href="/my-trust-score"
+                className="text-sm font-medium text-white hover:text-white/80"
+              >
+                My trust score
+              </Link>
+              <Link
+                href="/login"
+                className="text-sm font-medium text-white hover:text-white/80"
+              >
+                Landlord login
+              </Link>
+              <Link
+                href="/login"
+                className="text-sm font-medium text-white hover:text-white/80"
+              >
+                Institution login
+              </Link>
+              <Button
+                asChild
+                className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-5 font-medium"
+              >
+                <Link href="/signup">Get Started</Link>
+              </Button>
+            </>
+          )}
+        </div>
       </div>
     </header>
   );

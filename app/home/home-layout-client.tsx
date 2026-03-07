@@ -18,6 +18,7 @@ export function HomeLayoutClient({ children }: { children: React.ReactNode }) {
 
   if (!role) return <Loading />;
   if (role === "ADMIN") return <Loading />;
+  if ((role as string) === "INDIVIDUAL") return <Loading />;
 
   const isInstitution = role === "LANDLORD" || role === "FINTECH";
 

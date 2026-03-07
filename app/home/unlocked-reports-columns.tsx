@@ -46,7 +46,7 @@ export const unlockedReportsColumns: ColumnDef<UnlockedReportRow>[] = [
     id: "actions",
     header: "",
     cell: ({ row }) => (
-      <Link href={`/home/reports/${row.original.targetProfileId}`}>
+      <Link href={`/home/reports/${row.original.targetId}`}>
         <Button variant="ghost" size="sm">
           View report
         </Button>

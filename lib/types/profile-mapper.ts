@@ -18,16 +18,6 @@ export function mapProfileToUser(profile: Profile): AnyUser {
   };
 
   switch (profile.role) {
-    case "INDIVIDUAL":
-      return {
-        ...base,
-        role: "INDIVIDUAL",
-        trustScore: profile.trustScore ?? null,
-        riskLevel: scoreToRiskLevel(profile.trustScore ?? null) ?? null,
-        verificationStatus: profile.verificationStatus ?? "NOT_STARTED",
-        lastVerificationDate: profile.lastVerificationDate ?? null,
-      } as AnyUser;
-
     case "LANDLORD":
       return {
         ...base,
@@ -64,11 +54,9 @@ export function mapProfileToUser(profile: Profile): AnyUser {
         lastActive: profile.lastActive ?? null,
       } as AnyUser;
 
-    default:
-      return {
-        ...base,
-        role: "INDIVIDUAL",
-        verificationStatus: "NOT_STARTED",
-      } as AnyUser;
+    default: {
+      const _: never = profile.role;
+      throw new Error("Unknown role");
+    }
   }
 }

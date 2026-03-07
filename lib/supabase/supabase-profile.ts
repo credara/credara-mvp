@@ -8,6 +8,7 @@ const PROFILE_SNAKE_TO_CAMEL: [string, string][] = [
   ["institution_type", "institutionType"],
   ["business_name", "businessName"],
   ["trust_score", "trustScore"],
+  ["trust_report_content", "trustReportContent"],
   ["verification_status", "verificationStatus"],
   ["last_verification_date", "lastVerificationDate"],
   ["internal_notes", "internalNotes"],

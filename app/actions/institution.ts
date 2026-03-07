@@ -2,7 +2,7 @@
 
 import { eq, and, ilike, or, desc, inArray } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
-import { db, profiles, reportUnlocks } from "@/lib/db";
+import { db, profiles, reportUnlocks, individuals } from "@/lib/db";
 import type { TrustReportContent } from "@/lib/types/trust-report";
 
 async function requireInstitution() {
@@ -40,23 +40,21 @@ export async function searchLookup(term: string): Promise<LookupResult[]> {
   const t = `%${term.trim()}%`;
   const rows = await db
     .select({
-      id: profiles.id,
-      fullName: profiles.fullName,
-      credaraId: profiles.credaraId,
-      trustScore: profiles.trustScore,
-      riskLevel: profiles.riskLevel,
+      id: individuals.id,
+      fullName: individuals.fullName,
+      credaraId: individuals.credaraId,
+      trustScore: individuals.trustScore,
+      riskLevel: individuals.riskLevel,
     })
-    .from(profiles)
+    .from(individuals)
     .where(
-      and(
-        eq(profiles.role, "INDIVIDUAL"),
-        or(
-          ilike(profiles.phone, t),
-          ilike(profiles.credaraId, t),
-          ilike(profiles.fullName, t),
-          ilike(profiles.email, t)
-        )!
-      )
+      or(
+        ilike(individuals.phone, t),
+        ilike(individuals.normalizedPhone, t),
+        ilike(individuals.credaraId, t),
+        ilike(individuals.fullName, t),
+        ilike(individuals.email, t)
+      )!
     )
     .limit(20);
 
@@ -65,18 +63,18 @@ export async function searchLookup(term: string): Promise<LookupResult[]> {
   const ids = rows.map((r) => r.id);
 
   const unlockedRows = await db
-    .select({
-      targetProfileId: reportUnlocks.targetProfileId,
-    })
+    .select({ targetIndividualId: reportUnlocks.targetIndividualId })
     .from(reportUnlocks)
     .where(
       and(
         eq(reportUnlocks.institutionUserId, user.id),
-        inArray(reportUnlocks.targetProfileId, ids)
+        inArray(reportUnlocks.targetIndividualId, ids)
       )
     );
 
-  const unlockedSet = new Set(unlockedRows.map((u) => u.targetProfileId));
+  const unlockedSet = new Set(
+    unlockedRows.map((u) => u.targetIndividualId).filter(Boolean)
+  );
 
   return rows.map((r) => ({
     ...r,
@@ -86,7 +84,9 @@ export async function searchLookup(term: string): Promise<LookupResult[]> {
 
 export type UnlockedReportRow = {
   id: string;
-  targetProfileId: string;
+  targetId: string;
+  targetProfileId: string | null;
+  targetIndividualId: string | null;
   userName: string | null;
   credaraId: string | null;
   scoreAtUnlock: number | null;
@@ -119,7 +119,9 @@ export async function getUnlockedReports(params: {
 
   const data: UnlockedReportRow[] = rows.map((r) => ({
     id: r.id,
-    targetProfileId: r.targetProfileId,
+    targetId: r.targetIndividualId ?? r.targetProfileId ?? "",
+    targetProfileId: r.targetProfileId ?? null,
+    targetIndividualId: r.targetIndividualId ?? null,
     userName: r.targetUserName ?? null,
     credaraId: r.targetCredaraId ?? null,
     scoreAtUnlock: r.scoreAtUnlock ?? null,
@@ -133,18 +135,18 @@ export async function getUnlockedReports(params: {
 const CREDITS_PER_UNLOCK = 1;
 
 export async function unlockReport(
-  targetProfileId: string
+  targetIndividualId: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const { user, profile } = await requireInstitution();
 
   const [target] = await db
     .select()
-    .from(profiles)
-    .where(eq(profiles.id, targetProfileId))
+    .from(individuals)
+    .where(eq(individuals.id, targetIndividualId))
     .limit(1);
 
-  if (!target || target.role !== "INDIVIDUAL")
-    return { ok: false, error: "User not found or not an individual" };
+  if (!target)
+    return { ok: false, error: "Individual not found" };
 
   if (profile.role === "LANDLORD") {
     const balance = profile.creditBalance ?? 0;
@@ -172,7 +174,7 @@ export async function unlockReport(
 
   await db.insert(reportUnlocks).values({
     institutionUserId: user.id,
-    targetProfileId: target.id,
+    targetIndividualId: target.id,
     targetUserName: target.fullName ?? null,
     targetCredaraId: target.credaraId ?? null,
     scoreAtUnlock: target.trustScore ?? null,
@@ -195,7 +197,7 @@ export type ReportProfile = {
 };
 
 export async function getReportByTargetId(
-  targetProfileId: string
+  targetId: string
 ): Promise<ReportProfile | null> {
   const { user } = await requireInstitution();
 
@@ -205,12 +207,47 @@ export async function getReportByTargetId(
     .where(
       and(
         eq(reportUnlocks.institutionUserId, user.id),
-        eq(reportUnlocks.targetProfileId, targetProfileId)
+        or(
+          eq(reportUnlocks.targetIndividualId, targetId),
+          eq(reportUnlocks.targetProfileId, targetId)
+        )!
       )
     )
     .limit(1);
 
   if (!unlock) return null;
+
+  if (unlock.targetIndividualId === targetId) {
+    const [target] = await db
+      .select({
+        id: individuals.id,
+        fullName: individuals.fullName,
+        email: individuals.email,
+        phone: individuals.phone,
+        credaraId: individuals.credaraId,
+        trustScore: individuals.trustScore,
+        riskLevel: individuals.riskLevel,
+        verificationStatus: individuals.verificationStatus,
+        trustReportContent: individuals.trustReportContent,
+      })
+      .from(individuals)
+      .where(eq(individuals.id, targetId))
+      .limit(1);
+
+    if (!target) return null;
+    const content = target.trustReportContent as TrustReportContent | null;
+    return {
+      id: target.id,
+      fullName: target.fullName ?? null,
+      email: target.email ?? null,
+      phone: target.phone,
+      credaraId: target.credaraId ?? null,
+      trustScore: target.trustScore ?? null,
+      riskLevel: target.riskLevel ?? null,
+      verificationStatus: target.verificationStatus ?? null,
+      trustReportContent: content ?? null,
+    };
+  }
 
   const [target] = await db
     .select({
@@ -225,10 +262,10 @@ export async function getReportByTargetId(
       trustReportContent: profiles.trustReportContent,
     })
     .from(profiles)
-    .where(eq(profiles.id, targetProfileId))
+    .where(eq(profiles.id, targetId))
     .limit(1);
 
-  if (!target || target.id !== unlock.targetProfileId) return null;
+  if (!target) return null;
 
   const content = target.trustReportContent as TrustReportContent | null;
   return {
